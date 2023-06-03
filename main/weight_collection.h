@@ -9,9 +9,9 @@
 #ifndef WEIGHT_COLLECTION_H_
 #define WEIGHT_COLLECTION_H_
 
-#include <Servo.h>                  //control the DC motors
+// #include <Servo.h>                  //control the DC motors
 //#include <Herkulex.h>               //smart servo
-#include <Wire.h>                   //for I2C and SPI
+// #include <Wire.h>                   //for I2C and SPI
 
 
 #include "sensors.h"               //will need sensor library to detect weights
