@@ -10,6 +10,7 @@
 #include "Arduino.h"
 
 #include "motors.h"
+#include "sensors.h"
 
 #include <stdio.h>
 #include <Servo.h>
@@ -58,6 +59,8 @@ void robot_setup() {
 	// Initialise the main drive motors
 	motors_setup();
 
+    sensors_init();
+
     delay(1000);
 
 	// Wait for the go button to be pressed
@@ -75,9 +78,8 @@ void loop() {
 
 	while(running) {
         // Ramp the motor 
-        int16_t motorSpeed = motors_ramp(MOTOR_2, 0, 100, 100);
-
-        Serial.printf("Motor speed: %d\n", motorSpeed);
+        Serial.printf("%4d \n", read_infrared());
+        delay(100);
 
         // Check if the user wants to stop the robot
 		if (Serial.available() > 0) {

@@ -9,17 +9,24 @@
 #include "sensors.h"
 #include "Arduino.h"
 
+#include <stdio.h>
 // Local definitions
-//#define 
+#define IR_SENSOR_1 A8
 
 // Read ultrasonic value
+void sensors_init(){
+    Serial.println("Initialising sensors \n");
+
+}
+
+
 void read_ultrasonic(/* Parameters */){
   Serial.println("Ultrasonic value \n");
 }
 
 // Read infrared value
-void read_infrared(/* Parameters */){
-  Serial.println("Infrared value \n");  
+uint16_t read_infrared(/* Parameters */){
+    return analogRead(IR_SENSOR_1); // Read the value from the sensor
 }
 
 // Read colour sensor value
