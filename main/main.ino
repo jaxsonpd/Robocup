@@ -8,7 +8,6 @@
 
 // ===================================== Includes =====================================
 #include "Arduino.h"
-#include <avr/wdt.h>
 
 #include "motors.h"
 
@@ -31,7 +30,7 @@ bool running = true;
  * 
  */
 void waitForGo() {
-	pinMode(GO_BUTTON_PIN, INPUT);
+    pinMode(GO_BUTTON_PIN, INPUT);
 	
 	Serial.println("Waiting for go button to be pressed");
 	while (digitalRead(GO_BUTTON_PIN) == LOW) {
@@ -59,6 +58,8 @@ void robot_setup() {
 	// Initialise the main drive motors
 	motors_setup();
 
+    delay(1000);
+
 	// Wait for the go button to be pressed
 	waitForGo();
 	Serial.println("Go button pressed, starting robot");
@@ -73,25 +74,22 @@ void loop() {
 	robot_setup();
 
 	while(running) {
-		// put your main code here, to run repeatedly:
-		motors_setSpeed(MOTOR_1, 75);
-		motors_setSpeed(MOTOR_2, 75);
-		Serial.println("Motors at 75%");
+        // Ramp the motor 
+        int16_t motorSpeed = motors_ramp(MOTOR_2, 0, 100, 100);
 
-		delay(3000);
+        Serial.printf("Motor speed: %d\n", motorSpeed);
 
-		motors_setSpeed(MOTOR_1, 0);
-		motors_setSpeed(MOTOR_2, 0);
-		Serial.println("Motors at 0%");
-		delay(3000);
-
+        // Check if the user wants to stop the robot
 		if (Serial.available() > 0) {
 			char input = Serial.read();
 			if (input == 'q') {
 				running = false;
-				Serial.println("Stopping robot");
+				Serial.println("Stopping robot (Serial)");
 			}
-		}
+		} else if (digitalRead(GO_BUTTON_PIN) == HIGH) {
+            running = false;
+            Serial.println("Stopping robot (Button)");
+        }
 	}
 
 }

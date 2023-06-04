@@ -22,5 +22,6 @@ enum motor {
 // ===================================== Function Prototypes ==========================
 bool motors_setup();
 bool motors_setSpeed(uint8_t motor, int16_t speed);
+int16_t motors_ramp(uint8_t motor, int16_t startSpeed, int16_t EndSpeed, int32_t rampSpeed);
 
 #endif // MOTOR_H
