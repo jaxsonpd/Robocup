@@ -41,52 +41,6 @@ bool motors_setup() {
     return 0;
 }
 
-
-/**
- * @brief Ramp the motors up to the speed setting
- * 
- * @param motor The motor to ramp up
- * @param startSpeed The speed to start ramping from
- * @param EndSpeed The speed to ramp up to
- * @param rampTime The time between 1% increases to take to ramp up
- * 
- * @return the current motor speed
- */
-int16_t motors_ramp(uint8_t motor, int16_t startSpeed, int16_t EndSpeed, int32_t rampSpeed) {
-    // Get the starting time
-    static int32_t startTime = millis();
-    static int16_t speed = startSpeed;
-    static int16_t prevousStartSpeed = startSpeed;
-
-    // If start speed has changed reset the ramp
-    if (prevousStartSpeed != startSpeed) {
-        startTime = millis();
-        prevousStartSpeed = startSpeed;
-        speed = startSpeed;
-    }
-    uint16_t elapsed = millis() - startTime;
-
-    if (elapsed > rampSpeed) {
-        // Increment the speed
-
-        Serial.println("Increasing Speed");
-        if (speed < EndSpeed) {
-            speed += 1;
-        } else { // At the end speed so reset
-            speed = startSpeed;
-        }
-
-        // Set the speed of the motor
-        motors_setSpeed(motor, speed);
-
-        // Reset the start time
-        startTime = millis();
-    }
-
-    return speed;
-}
-
-
 /**
  * @brief Set the speed of a motor
  * 
