@@ -7,15 +7,16 @@
 
 
 // ===================================== Includes =====================================
-#include "arduino.h"
+#include <Arduino.h>
+#include <Servo.h>
 
 #include "motors.h"
 
-#include <Servo.h>
 #include <stdint.h>
-
+#include <stdbool.h>
 
 // ===================================== Constants ====================================
+// ** DC Motor parameters **
 #define MOTOR_1_PIN 0
 #define MOTOR_2_PIN 1
 
@@ -33,7 +34,7 @@ Servo M1, M2; // Define the servo objects for each motor
  * 
  * @return success (0) or failure (1)
  */
-bool motors_setup() {
+bool motors_setup(void) {
     // Attach the motors to each servo object
     M1.attach(MOTOR_1_PIN);
     M2.attach(MOTOR_2_PIN);
@@ -49,14 +50,14 @@ bool motors_setup() {
  * 
  * @return success (0) or failure (1)
  */
-bool motors_setSpeed(uint8_t motor, int16_t speed) {
+bool motors_setSpeed(uint8_t selectedMotor, int8_t speed) {
     // Check to see if the speed is in range
     if (speed > MOTOR_SPEED_MAX || speed < MOTOR_SPEED_MIN) {
         return 1;
     }
 
     // Invert motor 2 speed
-    if (motor == MOTOR_2) {
+    if (selectedMotor == MOTOR_2) {
       speed *= -1;
     }
 
@@ -64,9 +65,9 @@ bool motors_setSpeed(uint8_t motor, int16_t speed) {
     speed = map(speed, MOTOR_SPEED_MIN, MOTOR_SPEED_MAX, 1050, 1950);
 
     // Set the speed of the motor
-    if (motor == MOTOR_1) {
+    if (selectedMotor == MOTOR_1) {
         M1.writeMicroseconds(speed);
-    } else if (motor == MOTOR_2) {
+    } else if (selectedMotor == MOTOR_2) {
         M2.writeMicroseconds(speed);
     } else {
         return 1;

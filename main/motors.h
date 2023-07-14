@@ -11,16 +11,19 @@
 
 
 // ===================================== Includes =====================================
+#include <Arduino.h>
+
 #include <stdint.h>
+#include <stdbool.h>
 
 // ===================================== Constants ====================================
-enum motor {
+enum motor { // Motor selection enum
     MOTOR_1,
     MOTOR_2
 };
 
 // ===================================== Function Prototypes ==========================
 bool motors_setup();
-bool motors_setSpeed(uint8_t motor, int16_t speed);
+bool motors_setSpeed(uint8_t selectedMotor, int8_t speed);
 
 #endif // MOTOR_H
