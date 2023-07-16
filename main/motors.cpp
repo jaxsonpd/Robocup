@@ -108,14 +108,28 @@ void motors_updateInfo(RobotInfo_t *robotInfo) {
 void motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16_t speed) {
     // Calculate the error
     int16_t error = headingSetpoint - robotInfo->IMU_Heading;
-    int16_t controlValue = (P_CONTROL_GAIN * error)/100;
+    static int16_t errorInt = 0;
+    static int16_t errorPrev = 0;
 
-    controlValue = (controlValue > 100) ? 100 : controlValue;
-    controlValue = (controlValue < -100) ? -100 : controlValue;
+    // Calculate the integral error
+    errorInt += error;
 
-    // Calculate the speed of each motor
-    int16_t motor1Speed = controlValue;
-    int16_t motor2Speed = controlValue;
+    // Calculate the derivative error
+    int16_t errorDer = error - errorPrev;
+
+    // Calculate the control values
+    int16_t controlValue = (P_CONTROL_GAIN * error+I_CONTROL_GAIN * errorInt + D_CONTROL_GAIN)/100;
+
+    // Calculate the motor speeds
+    int16_t motor1Speed = speed + controlValue;
+    int16_t motor2Speed = speed - controlValue;
+
+    // Check to see if the motor speeds are in range
+    motor1Speed = (motor1Speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : motor1Speed;
+    motor1Speed = (motor1Speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor1Speed;
+    
+    motor2Speed = (motor2Speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : motor2Speed;
+    motor2Speed = (motor2Speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor2Speed;
 
     // Set the motor speeds
     motors_setSpeed(MOTOR_1, motor1Speed);
