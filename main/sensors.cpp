@@ -8,6 +8,10 @@
 
 // ===================================== Includes =====================================
 #include <Arduino.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BNO055.h>
+#include <utility/imumaths.h>
 
 #include "sensors.h"
 #include "ultrasonic.hpp"
@@ -19,10 +23,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-
 // ===================================== Constants ====================================
 
 // ===================================== Globals ======================================
+// Check I2C device address and correct line below (by default address is 0x29 or 0x28)
+//                                   id, address
+Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
+
 // Number of ultrasonic sensors for external use
 uint8_t numUS = US_NUM;
 
@@ -42,6 +49,11 @@ irTri_sensor_t bottom_IRTriSensor = {IRTRI_1_PIN, IRTRI_1_TYPE};
 bool sensors_init(void) {
     // Initialise ultrasonic sensor counters
     usCounterInit(); 
+
+    // Initialise the IMU
+    if(!bno.begin()) {
+        return 1;
+    }
 
     // Add ultrasonic sensors to array
     #ifdef US_0
@@ -103,6 +115,17 @@ void sensors_getUSDistances(uint16_t distances[US_NUM]) {
 
 
 /** 
+ * @brief Get the current heading of the robot
+ * 
+ * @return the heading in degrees
+ */
+int16_t sensors_getHeading(void) {
+    imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
+    return euler.x();
+}
+
+
+/** 
  * @brief Update the robot info struct with the sensor data
  * @param robotInfo The robot info struct to update
  * 
@@ -122,4 +145,5 @@ void sensors_updateInfo(RobotInfo_t* robotInfo) {
     robotInfo->IRBottom_Distance = sensors_getIRTriDistance(bottom_IRTriSensor);
 
     // Update the IMU data
+    robotInfo->IMU_Heading = sensors_getHeading();
 }
