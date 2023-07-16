@@ -28,10 +28,14 @@
 #define IRTRI_NUM 1
 
 // Parameters for IR triangulating sensor 0
-#define IRTRI_0
+#define IRTRI_0 // Top IR triangulating sensor
 #define IRTRI_0_PIN A8
 #define IRTRI_0_TYPE IRTRI_20_150
 
+// Parameters for IR triangulating sensor 1
+#define IRTRI_1 // Bottom IR triangulating sensor
+#define IRTRI_1_PIN A9
+#define IRTRI_1_TYPE IRTRI_20_150
 
 
 // ===================================== Function Prototypes ==========================

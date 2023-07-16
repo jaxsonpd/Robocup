@@ -13,6 +13,8 @@
 // ===================================== Includes =====================================
 #include <Arduino.h>
 
+#include "robotInfo.h"
+
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -25,5 +27,6 @@ enum motor { // Motor selection enum
 // ===================================== Function Prototypes ==========================
 bool motors_setup();
 bool motors_setSpeed(uint8_t selectedMotor, int8_t speed);
+void motors_updateInfo(RobotInfo_t *robotInfo);
 
 #endif // MOTOR_H

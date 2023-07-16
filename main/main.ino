@@ -13,8 +13,7 @@
 #include "motors.h"
 #include "sensors.h"
 #include "utils.h"
-
-#include "IRConfig.h"
+#include "robotInfo.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -22,13 +21,16 @@
 // ===================================== Constants ====================================
 #define SERIAL_BAUD_RATE 57600
 
-// IR triangulating sensor structs
-irTri_sensor_t irTri_0 = {IRTRI_0_PIN, IRTRI_0_TYPE};
-
 
 // ===================================== Globals ======================================
-bool running = true;
-extern uint8_t numUS;
+bool running = true; // Whether the robot is running or not
+extern uint8_t numUS; // Number of ultrasonic sensors from sensors.cpp
+
+// robotInfo struct 
+RobotInfo_t robotInfo = {0};
+
+
+// ===================================== Function Definitions =========================
 
 void robot_setup() {
 	// Initialise the serial output
@@ -56,27 +58,11 @@ void loop() {
 
 	while(running) {
         // Update robot information
-        uint16_t IRDistance = sensors_getIRTriDistance(irTri_0);
-        Serial.print(IRDistance);
-        Serial.print(",");
-        Serial.print(analogRead(irTri_0.pin));
-        Serial.print(",");
-        delay(100);
-
-        uint16_t USDistances[numUS] = {0};
-
-        sensors_pingUS();
-        delay(30);
-        sensors_getUSDistances(USDistances);
-
-        for (uint8_t i = 0; i < numUS; i++) {
-            Serial.print(USDistances[i]);
-            Serial.print(",");
-        }
-
-        Serial.println();
-
+        motors_updateInfo(&robotInfo);
+        sensors_updateInfo(&robotInfo);
+        
         // perform actions
+        printRobotInfo(&robotInfo);
 
         // Check if the robot should keep running
         running = checkStopped();

@@ -11,6 +11,7 @@
 
 #include "sensors.h"
 #include "ultrasonic.hpp"
+#include "robotInfo.h"
 
 #include "USConfig.h"
 #include "IRConfig.h"
@@ -21,16 +22,16 @@
 
 // ===================================== Constants ====================================
 
-
-
-
-// ** Ultrasonic sensor parameters **
-
 // ===================================== Globals ======================================
 // Number of ultrasonic sensors for external use
 uint8_t numUS = US_NUM;
 
+// Array of ultrasonic sensors
+extern UltrasonicSensor_t usArray[US_NUM]; 
 
+// IR triangulating sensor structs
+irTri_sensor_t top_IRTriSensor = {IRTRI_0_PIN, IRTRI_0_TYPE};
+irTri_sensor_t bottom_IRTriSensor = {IRTRI_1_PIN, IRTRI_1_TYPE};
 
 // ===================================== Function Definitions =========================
 /** 
@@ -41,10 +42,21 @@ uint8_t numUS = US_NUM;
 bool sensors_init(void) {
     // Initialise ultrasonic sensor counters
     usCounterInit(); 
-    // Add ultrasonic sensors to array
-    usAddToArray(US_TRIG_0, US_ECHO_0, 0); 
-    usAddToArray(US_TRIG_1, US_ECHO_1, 1); 
 
+    // Add ultrasonic sensors to array
+    #ifdef US_0
+        usAddToArray(US_TRIG_0, US_ECHO_0, 0);
+    #endif
+    #ifdef US_1
+        usAddToArray(US_TRIG_1, US_ECHO_1, 1);
+    #endif
+    #ifdef US_2
+        usAddToArray(US_TRIG_2, US_ECHO_2, 2);
+    #endif
+    #ifdef US_3
+        usAddToArray(US_TRIG_3, US_ECHO_3, 3);
+    #endif
+    
     return 0;
 }
 
@@ -56,15 +68,14 @@ bool sensors_init(void) {
  */
 uint16_t sensors_getIRTriDistance(irTri_sensor_t sensor) {
     uint16_t rawValue = analogRead(sensor.pin);
-
     uint16_t distance = 0;
 
     if (sensor.type == 0) {
         return 0;
     } else if (sensor.type == 1) {
         return 0;
-    } else if (sensor.type == IRTRI_20_150) { // 20-150cm
-        distance = map(rawValue, IRTRI_20_150_RAWMIN, IRTRI_20_150_RAWMAX, 1500, 200);
+    } else if (sensor.type == IRTRI_20_150) { // 20-150cm IR Sensor
+        distance = rawValue;
     }
     return distance;
 }
@@ -91,3 +102,24 @@ void sensors_getUSDistances(uint16_t distances[US_NUM]) {
 }
 
 
+/** 
+ * @brief Update the robot info struct with the sensor data
+ * @param robotInfo The robot info struct to update
+ * 
+ */
+void sensors_updateInfo(RobotInfo_t* robotInfo) {
+    // Update the ultrasonic sensor data
+    uint16_t* usDistances = new uint16_t[US_NUM]; 
+
+    sensors_getUSDistances(usDistances);
+    robotInfo->USLeft_Distance = usDistances[0];
+    robotInfo->USRight_Distance = usDistances[1];
+
+    delete[] usDistances;
+    
+    // Update the IR sensor data
+    robotInfo->IRTop_Distance = sensors_getIRTriDistance(top_IRTriSensor);
+    robotInfo->IRBottom_Distance = sensors_getIRTriDistance(bottom_IRTriSensor);
+
+    // Update the IMU data
+}
