@@ -24,6 +24,11 @@
 #define MOTOR_SPEED_MAX 100
 #define MOTOR_SPEED_MIN -100
 
+#define P_CONTROL_GAIN 1 //  /100
+#define I_CONTROL_GAIN 1 //  /100
+#define D_CONTROL_GAIN 1 //  /100
+
+// ===================================== Objects ======================================
 Servo M1, M2; // Define the servo objects for each motor
 
 // ===================================== Globals ======================================
@@ -88,6 +93,35 @@ bool motors_setSpeed(uint8_t selectedMotor, int8_t speed) {
  */
 void motors_updateInfo(RobotInfo_t *robotInfo) {
     // Update the motor speeds
+    robotInfo->leftMotorSpeed = motor1Speed;
+    robotInfo->rightMotorSpeed = motor2Speed;
+}
+
+
+/** 
+ * @brief Make the robot move to the heading setpoint
+ * @param robotInfo The robotInfo struct to update
+ * @param headingSetpoint The heading setpoint to follow
+ * @param speed The speed to move forward at (0 is rotate on the spot, 100 is full speed)
+ * 
+ */
+void motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16_t speed) {
+    // Calculate the error
+    int16_t error = headingSetpoint - robotInfo->IMU_Heading;
+    int16_t controlValue = (P_CONTROL_GAIN * error)/100;
+
+    controlValue = (controlValue > 100) ? 100 : controlValue;
+    controlValue = (controlValue < -100) ? -100 : controlValue;
+
+    // Calculate the speed of each motor
+    int16_t motor1Speed = controlValue;
+    int16_t motor2Speed = controlValue;
+
+    // Set the motor speeds
+    motors_setSpeed(MOTOR_1, motor1Speed);
+    motors_setSpeed(MOTOR_2, motor2Speed);
+
+    // Update the robotInfo struct
     robotInfo->leftMotorSpeed = motor1Speed;
     robotInfo->rightMotorSpeed = motor2Speed;
 }
