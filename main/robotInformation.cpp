@@ -1,5 +1,5 @@
 /** 
- * @file robotInfo.c
+ * @file robotInfo.cpp
  * @brief Filoe for the robotInfo module
  * @author Jack Duignan (Jackpduignan@gmail.com)
  * @date 2023-07-16
@@ -9,10 +9,11 @@
 // ===================================== Includes =====================================
 #include <Arduino.h>
 
-#include "robotInfo.h"
+#include "robotInformation.hpp"
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 
 // ===================================== Types/Constants ==============================
@@ -21,7 +22,7 @@
 // ===================================== Globals ======================================
 
 
-// ===================================== Function Definitions =========================
+// ===================================== Function Definitions =========================     
 /** 
  * @brief print the robot info to the serial monitor
  * @param robotInfo the robot info struct to print
@@ -29,7 +30,9 @@
  */
 void printRobotInfo(RobotInfo_t* robotInfo) {
     // Print the robot info
-    Serial.printf("Robot Info: %d\%, %d\%, %d mm, %d mm, %d mm , %d mm %d deg\n",
+    char buffer[100];
+
+    sprintf(buffer, "Robot Info: %d\%, %d\%, %d mm, %d mm, %d mm , %d mm %d deg\n",
         robotInfo->leftMotorSpeed,
         robotInfo->rightMotorSpeed,
 
@@ -40,5 +43,6 @@ void printRobotInfo(RobotInfo_t* robotInfo) {
         robotInfo->IRBottom_Distance,
         
         robotInfo->IMU_Heading);
-}       
 
+    Serial.print(buffer);
+}  

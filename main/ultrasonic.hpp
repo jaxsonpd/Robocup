@@ -18,7 +18,7 @@
 #include <Arduino.h>
 #include <stdint.h>
 
-#include "USConfig.h"
+#include "USConfig.hpp"
 
 
 /**

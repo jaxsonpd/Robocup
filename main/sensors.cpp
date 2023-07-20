@@ -13,12 +13,12 @@
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
 
-#include "sensors.h"
+#include "sensors.hpp"
 #include "ultrasonic.hpp"
-#include "robotInfo.h"
+#include "robotInformation.hpp"
 
-#include "USConfig.h"
-#include "IRConfig.h"
+#include "USConfig.hpp"
+#include "IRConfig.hpp"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -89,8 +89,8 @@ uint16_t sensors_getIRTriDistance(irTri_sensor_t sensor) {
     } else if (sensor.type == IRTRI_20_150) { // 20-150cm IR Sensor
         distance = rawValue;
     }
-    return distance;
-}
+    return rawValue;
+}   
 
 
 /** 

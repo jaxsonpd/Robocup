@@ -10,8 +10,8 @@
 #include <Arduino.h>
 #include <Servo.h>
 
-#include "motors.h"
-#include "robotInfo.h"
+#include "motors.hpp"
+#include "robotInformation.hpp"
 
 #include <stdint.h>
 #include <stdbool.h>

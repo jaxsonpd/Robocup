@@ -9,7 +9,7 @@
 // ===================================== Includes =====================================
 #include <arduino.h>
 
-#include "weightCollection.h"
+#include "weightCollection.hpp"
 
 #include <stdint.h>
 #include <stdbool.h>

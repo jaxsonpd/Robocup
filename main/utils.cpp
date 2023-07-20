@@ -9,6 +9,8 @@
 // ===================================== Includes =====================================
 #include <Arduino.h>
 
+#include "utils.hpp"
+
 #include <stdint.h>
 #include <stdbool.h>
 

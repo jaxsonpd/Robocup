@@ -13,7 +13,7 @@
 // ===================================== Includes =====================================
 #include <Arduino.h>
 
-#include "robotInfo.h"
+#include "robotInformation.hpp"
 
 #include <stdint.h>
 #include <stdbool.h>

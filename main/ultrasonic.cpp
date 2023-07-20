@@ -1,7 +1,7 @@
 #include <Arduino.h>
 
 #include "ultrasonic.hpp"
-#include "USConfig.h"
+#include "USConfig.hpp"
 
 /**
  * Array to hold data for the array of ultrasonic sensors

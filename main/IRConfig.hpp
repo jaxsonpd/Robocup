@@ -25,7 +25,7 @@
 
 // ** IR triangulating sensor values **
 // Number of IR triangulating sensors
-#define IRTRI_NUM 1
+#define IRTRI_NUM 2
 
 // Parameters for IR triangulating sensor 0
 #define IRTRI_0 // Top IR triangulating sensor

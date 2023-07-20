@@ -18,7 +18,7 @@
 // ===================================== Types/Constants ==============================
 
 // RobotInfo struct to hold all the sensor data
-typedef struct RobotInfo_t {
+typedef struct {
     // Motor speeds
     int8_t leftMotorSpeed; // Left motor speed (-100 to 100)
     int8_t rightMotorSpeed; // right motor speed (-100 to 100)
@@ -35,6 +35,7 @@ typedef struct RobotInfo_t {
     // IMU
     int16_t IMU_Heading; // IMU heading in degrees
 } RobotInfo_t;
+
 
 // ===================================== Function Prototypes ==========================
 void printRobotInfo(RobotInfo_t* robotInfo);

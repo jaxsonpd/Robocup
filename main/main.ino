@@ -10,13 +10,14 @@
 #include <Arduino.h>
 #include <Servo.h>
 
-#include "motors.h"
-#include "sensors.h"
-#include "utils.h"
-#include "robotInfo.h"
+#include "motors.hpp"
+#include "sensors.hpp"
+#include "utils.hpp"
+#include "robotInformation.hpp"
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 
 // ===================================== Constants ====================================
 #define SERIAL_BAUD_RATE 57600
