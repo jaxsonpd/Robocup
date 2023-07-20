@@ -45,7 +45,7 @@ void serialInit(uint32_t baudRate) {
 
     // Let the user know that the serial output has started
 	char startString[50];
-	sprintf(startString, "Serial Output started at %d baud", baudRate);
+	sprintf(startString, "Serial Output started at %ld baud", baudRate);
 	Serial.println(startString);
 }
 

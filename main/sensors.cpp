@@ -80,15 +80,15 @@ bool sensors_init(void) {
  */
 uint16_t sensors_getIRTriDistance(irTri_sensor_t sensor) {
     uint16_t rawValue = analogRead(sensor.pin);
-    uint16_t distance = 0;
+    // uint16_t distance = 0;
 
-    if (sensor.type == 0) {
-        return 0;
-    } else if (sensor.type == 1) {
-        return 0;
-    } else if (sensor.type == IRTRI_20_150) { // 20-150cm IR Sensor
-        distance = rawValue;
-    }
+    // if (sensor.type == 0) {
+    //     return 0;
+    // } else if (sensor.type == 1) {
+    //     return 0;
+    // } else if (sensor.type == IRTRI_20_150) { // 20-150cm IR Sensor
+    //     distance = rawValue;
+    // }
     return rawValue;
 }   
 
@@ -146,4 +146,14 @@ void sensors_updateInfo(RobotInfo_t* robotInfo) {
 
     // Update the IMU data
     robotInfo->IMU_Heading = sensors_getHeading();
+}
+
+/**
+ * @breif update the sesnors to recive new readings
+ * 
+ */
+void sensors_update(void) {
+  sensors_pingUS();
+
+  delay(30); // Allow the sensors to update
 }

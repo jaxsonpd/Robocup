@@ -58,6 +58,8 @@ void loop() {
 	robot_setup();
 
 	while(running) {
+        sensors_update();
+
         // Update robot information
         motors_updateInfo(&robotInfo);
         sensors_updateInfo(&robotInfo);
@@ -67,6 +69,8 @@ void loop() {
 
         // Check if the robot should keep running
         running = checkStopped();
+
+        delay(10);
 	}
 }
 

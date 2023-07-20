@@ -32,7 +32,7 @@ void printRobotInfo(RobotInfo_t* robotInfo) {
     // Print the robot info
     char buffer[100];
 
-    sprintf(buffer, "Robot Info: %d\%, %d\%, %d mm, %d mm, %d mm , %d mm %d deg\n",
+    sprintf(buffer, "Robot Info: %2d\%, %2d\%, US: %4d mm, %4d mm, IR: %4d mm , %4d mm %3d deg\n",
         robotInfo->leftMotorSpeed,
         robotInfo->rightMotorSpeed,
 
