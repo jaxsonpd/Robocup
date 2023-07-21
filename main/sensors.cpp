@@ -24,7 +24,8 @@
 #include <stdbool.h>
 
 // ===================================== Constants ====================================
-
+#define HEADING_OFFSET 360
+#define MAX_HEADING 180
 // ===================================== Globals ======================================
 // Check I2C device address and correct line below (by default address is 0x29 or 0x28)
 //                                   id, address
@@ -121,7 +122,13 @@ void sensors_getUSDistances(uint16_t distances[US_NUM]) {
  */
 int16_t sensors_getHeading(void) {
     imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
-    return euler.x();
+    int16_t heading = euler.x();
+
+    if (heading > MAX_HEADING) {
+        heading -= HEADING_OFFSET;
+    }
+
+    return heading;
 }
 
 

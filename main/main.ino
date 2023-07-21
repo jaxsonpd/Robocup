@@ -56,7 +56,7 @@ void setup() {} // Keep the Arduino IDE happy
 
 void loop() {
 	robot_setup();
-
+  uint32_t loopNum = 0;
 	while(running) {
         sensors_update();
 
@@ -67,10 +67,15 @@ void loop() {
         // perform actions
         printRobotInfo(&robotInfo);
 
+        if (loopNum == 5) {
+            motors_followHeading(&robotInfo, 0, 0);
+            loopNum = 0;
+        }
         // Check if the robot should keep running
         running = checkStopped();
 
-        delay(10);
+        loopNum ++;
+        // delay(10);
 	}
 }
 

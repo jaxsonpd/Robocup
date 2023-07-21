@@ -1,3 +1,4 @@
+#include "core_pins.h"
 /** 
  * @file motors.cpp
  * @brief Motor control functions for the robot cup project
@@ -24,9 +25,9 @@
 #define MOTOR_SPEED_MAX 100
 #define MOTOR_SPEED_MIN -100
 
-#define P_CONTROL_GAIN 1 //  /100
-#define I_CONTROL_GAIN 1 //  /100
-#define D_CONTROL_GAIN 1 //  /100
+#define P_CONTROL_GAIN 150 //  /100
+#define I_CONTROL_GAIN 100 //  /100
+#define D_CONTROL_GAIN 0 //  /100
 
 // ===================================== Objects ======================================
 Servo M1, M2; // Define the servo objects for each motor
@@ -110,19 +111,25 @@ void motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16
     int16_t error = headingSetpoint - robotInfo->IMU_Heading;
     static int16_t errorInt = 0;
     static int16_t errorPrev = 0;
+    static uint32_t prevTime = millis();
+
+    uint32_t currentTime = millis();
+    uint32_t deltaT = currentTime - prevTime;
 
     // Calculate the integral error
-    errorInt += error;
+    errorInt += error * deltaT;
 
     // Calculate the derivative error
-    int16_t errorDer = error - errorPrev;
+    int16_t errorDer = (error - errorPrev)/deltaT;
 
     // Calculate the control values
-    int16_t controlValue = (P_CONTROL_GAIN * error+I_CONTROL_GAIN * errorInt + D_CONTROL_GAIN)/100;
+    int16_t controlValue = (P_CONTROL_GAIN * error + (I_CONTROL_GAIN * errorInt)/1000 + (D_CONTROL_GAIN * errorDer)/1000)/100;
 
     // Calculate the motor speeds
-    int16_t motor1Speed = speed + controlValue;
-    int16_t motor2Speed = speed - controlValue;
+    int16_t motor1Speed = speed - controlValue;
+    int16_t motor2Speed = speed + controlValue;
+
+
 
     // Check to see if the motor speeds are in range
     motor1Speed = (motor1Speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : motor1Speed;
@@ -138,6 +145,10 @@ void motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16
     // Update the robotInfo struct
     robotInfo->leftMotorSpeed = motor1Speed;
     robotInfo->rightMotorSpeed = motor2Speed;
+
+    prevTime = currentTime;
+
+    errorPrev = error;
 }
 
 
