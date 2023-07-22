@@ -16,6 +16,7 @@
 #include "sensors.hpp"
 #include "ultrasonic.hpp"
 #include "robotInformation.hpp"
+#include "circBuffer.hpp"
 
 #include "USConfig.hpp"
 #include "IRConfig.hpp"
@@ -26,6 +27,9 @@
 // ===================================== Constants ====================================
 #define HEADING_OFFSET 360
 #define MAX_HEADING 180
+
+#define BUFFER_SIZE 8
+
 // ===================================== Globals ======================================
 // Check I2C device address and correct line below (by default address is 0x29 or 0x28)
 //                                   id, address
@@ -36,10 +40,20 @@ uint8_t numUS = US_NUM;
 
 // Array of ultrasonic sensors
 extern UltrasonicSensor_t usArray[US_NUM]; 
+uint16_t* usDistances = new uint16_t[US_NUM]; // Array of computed distances
 
 // IR triangulating sensor structs
 irTri_sensor_t top_IRTriSensor = {IRTRI_0_PIN, IRTRI_0_TYPE};
 irTri_sensor_t bottom_IRTriSensor = {IRTRI_1_PIN, IRTRI_1_TYPE};
+
+
+// Circular buffers for sensors
+circBuffer_t* us0Buffer = new circBuffer_t[BUFFER_SIZE]; // Left US
+circBuffer_t* us1Buffer = new circBuffer_t[BUFFER_SIZE]; // Right US
+circBuffer_t* ir0Buffer = new circBuffer_t[BUFFER_SIZE]; // Top IR
+circBuffer_t* ir1Buffer = new circBuffer_t[BUFFER_SIZE]; // Bottom IR
+circBuffer_t* headingBuffer = new circBuffer_t[BUFFER_SIZE];
+
 
 // ===================================== Function Definitions =========================
 /** 
@@ -69,7 +83,14 @@ bool sensors_init(void) {
     #ifdef US_3
         usAddToArray(US_TRIG_3, US_ECHO_3, 3);
     #endif
-    
+
+    // Initialise the buffers
+    circBuffer_init(us0Buffer, BUFFER_SIZE);
+    circBuffer_init(us1Buffer, BUFFER_SIZE);
+    circBuffer_init(ir0Buffer, BUFFER_SIZE);
+    circBuffer_init(ir1Buffer, BUFFER_SIZE);
+    circBuffer_init(headingBuffer, BUFFER_SIZE);
+
     return 0;
 }
 
@@ -79,7 +100,7 @@ bool sensors_init(void) {
  * 
  * @return the distance in mm
  */
-uint16_t sensors_getIRTriDistance(irTri_sensor_t sensor) {
+static uint16_t getIRTriDistance(irTri_sensor_t sensor) {
     uint16_t rawValue = analogRead(sensor.pin);
     // uint16_t distance = 0;
 
@@ -98,7 +119,7 @@ uint16_t sensors_getIRTriDistance(irTri_sensor_t sensor) {
  * @brief Ping the ultrasonic sensor array
  * 
  */
-void sensors_pingUS(void) {
+static void pingUS(void) {
     // Send a pulse to each ultrasonic sensor
     usPingArray(usArray, US_NUM); 
 }
@@ -109,7 +130,7 @@ void sensors_pingUS(void) {
  * @param distances The array to store the distances in
  *  
  */
-void sensors_getUSDistances(uint16_t distances[US_NUM]) {
+static void getUSDistances(uint16_t distances[US_NUM]) {
     // Get the distances from each ultrasonic sensor
     usCalcArray(usArray, US_NUM, distances);
 }
@@ -120,7 +141,7 @@ void sensors_getUSDistances(uint16_t distances[US_NUM]) {
  * 
  * @return the heading in degrees
  */
-int16_t sensors_getHeading(void) {
+static int16_t getHeading(void) {
     imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
     int16_t heading = euler.x();
 
@@ -131,6 +152,85 @@ int16_t sensors_getHeading(void) {
     return heading;
 }
 
+/** 
+ * @brief Get the filtered heading of the robot
+ * 
+ * @return the filtered heading in degrees
+ */
+static int32_t getFilteredHeading(void) {
+    int32_t heading = 0;
+
+    for (uint8_t i = 0; i < headingBuffer->size; i++) {
+        heading += headingBuffer->data[i];
+    }
+
+    return headingBuffer->data[0];
+}
+
+
+/** 
+ * @brief get the filtered distance from the left ultrasonic sensor
+ * 
+ * @return the filtered distance in mm
+ */
+static int32_t getFilteredLeftUS(void) {
+    uint16_t distance = 0;
+
+    for (uint8_t i = 0; i < us0Buffer->size; i++) {
+        distance += us0Buffer->data[i];
+    }
+
+    return distance / us0Buffer->size;
+}
+
+
+/** 
+ * @brief get the filtered distance from the right ultrasonic sensor
+ * 
+ * @return the filtered distance in mm
+ */
+static int32_t getFilteredRightUS(void) {
+    int32_t distance = 0;
+
+    for (uint8_t i = 0; i < us1Buffer->size; i++) {
+        distance += us1Buffer->data[i];
+    }
+
+    return distance / us1Buffer->size;
+}
+
+
+/** 
+ * @brief get the filtered distance from the top IR sensor
+ * 
+ * @return the filtered distance in mm
+ */
+static int32_t getFilteredTopIR(void) {
+    int32_t distance = 0;
+
+    for (uint8_t i = 0; i < ir0Buffer->size; i++) {
+        distance += ir0Buffer->data[i];
+    }
+
+    return distance / ir0Buffer->size;
+}
+
+
+/** 
+ * @brief get the filtered distance from the bottom IR sensor
+ * 
+ * @return the filtered distance in mm
+ */
+static int32_t getFilteredBottomIR(void) {
+    int32_t distance = 0;
+
+    for (uint8_t i = 0; i < ir1Buffer->size; i++) {
+        distance += ir1Buffer->data[i];
+    }
+
+    return distance / ir1Buffer->size;
+}
+
 
 /** 
  * @brief Update the robot info struct with the sensor data
@@ -138,29 +238,28 @@ int16_t sensors_getHeading(void) {
  * 
  */
 void sensors_updateInfo(RobotInfo_t* robotInfo) {
-    // Update the ultrasonic sensor data
-    uint16_t* usDistances = new uint16_t[US_NUM]; 
-
-    sensors_getUSDistances(usDistances);
-    robotInfo->USLeft_Distance = usDistances[0];
-    robotInfo->USRight_Distance = usDistances[1];
-
-    delete[] usDistances;
-    
-    // Update the IR sensor data
-    robotInfo->IRTop_Distance = sensors_getIRTriDistance(top_IRTriSensor);
-    robotInfo->IRBottom_Distance = sensors_getIRTriDistance(bottom_IRTriSensor);
-
-    // Update the IMU data
-    robotInfo->IMU_Heading = sensors_getHeading();
+    robotInfo->IMU_Heading = getFilteredHeading();
+    robotInfo->USLeft_Distance = getFilteredLeftUS();
+    robotInfo->USRight_Distance= getFilteredRightUS();
+    robotInfo->IRTop_Distance = getFilteredTopIR();
+    robotInfo->IRBottom_Distance = getFilteredBottomIR();
 }
 
 /**
- * @breif update the sesnors to recive new readings
+ * @breif update the sensors to recive new readings
  * 
  */
 void sensors_update(void) {
-  sensors_pingUS();
+    // Add the new readings to the buffers
+    getUSDistances(usDistances);
+    circBuffer_write(us0Buffer, usDistances[0]);
+    circBuffer_write(us1Buffer, usDistances[1]);
+    circBuffer_write(ir0Buffer, getIRTriDistance(top_IRTriSensor));
+    circBuffer_write(ir1Buffer, getIRTriDistance(bottom_IRTriSensor));
+    circBuffer_write(headingBuffer, getHeading());
 
-  delay(30); // Allow the sensors to update
+    // Start new ping cycle
+    pingUS();
+
+    // delay(30); // Allow the sensors to update
 }

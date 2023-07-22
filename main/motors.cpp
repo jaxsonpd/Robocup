@@ -103,27 +103,31 @@ void motors_updateInfo(RobotInfo_t *robotInfo) {
  * @brief Make the robot move to the heading setpoint
  * @param robotInfo The robotInfo struct to update
  * @param headingSetpoint The heading setpoint to follow
- * @param speed The speed to move forward at (0 is rotate on the spot, 100 is full speed)
+ * @param speed The speed to move at (0 is rotate on the spot, 100 is full speed)
  * 
  */
 void motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16_t speed) {
     // Calculate the error
     int16_t error = headingSetpoint - robotInfo->IMU_Heading;
+
     static int16_t errorInt = 0;
     static int16_t errorPrev = 0;
-    static uint32_t prevTime = millis();
+    static int32_t prevTime = millis();
 
-    uint32_t currentTime = millis();
-    uint32_t deltaT = currentTime - prevTime;
+    int32_t currentTime = millis();
+    int32_t deltaT = currentTime - prevTime;
 
     // Calculate the integral error
     errorInt += error * deltaT;
 
     // Calculate the derivative error
     int16_t errorDer = (error - errorPrev)/deltaT;
+    
+    prevTime = millis();
 
     // Calculate the control values
     int16_t controlValue = (P_CONTROL_GAIN * error + (I_CONTROL_GAIN * errorInt)/1000 + (D_CONTROL_GAIN * errorDer)/1000)/100;
+    
 
     // Calculate the motor speeds
     int16_t motor1Speed = speed - controlValue;
@@ -138,15 +142,21 @@ void motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16
     motor2Speed = (motor2Speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : motor2Speed;
     motor2Speed = (motor2Speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor2Speed;
 
+    Serial.print("E: ");
+    Serial.print(error);
+    Serial.print(" H: ");
+    Serial.print(robotInfo->IMU_Heading);
+    Serial.print(" C: ");
+    Serial.print(controlValue);
+    Serial.print(" M1: ");
+    Serial.print(motor1Speed);
+    Serial.print(" M2: ");
+    Serial.println(motor2Speed);
+
+
     // Set the motor speeds
     motors_setSpeed(MOTOR_1, motor1Speed);
     motors_setSpeed(MOTOR_2, motor2Speed);
-
-    // Update the robotInfo struct
-    robotInfo->leftMotorSpeed = motor1Speed;
-    robotInfo->rightMotorSpeed = motor2Speed;
-
-    prevTime = currentTime;
 
     errorPrev = error;
 }
