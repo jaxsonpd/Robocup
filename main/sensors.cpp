@@ -161,10 +161,10 @@ static int32_t getFilteredHeading(void) {
     int32_t heading = 0;
 
     for (uint8_t i = 0; i < headingBuffer->size; i++) {
-        heading += headingBuffer->data[i];
+        heading += circBuffer_read(headingBuffer);
     }
 
-    return headingBuffer->data[0];
+    return heading / headingBuffer->size;
 }
 
 
@@ -177,7 +177,7 @@ static int32_t getFilteredLeftUS(void) {
     uint16_t distance = 0;
 
     for (uint8_t i = 0; i < us0Buffer->size; i++) {
-        distance += us0Buffer->data[i];
+        distance += circBuffer_read(us0Buffer);
     }
 
     return distance / us0Buffer->size;
@@ -193,7 +193,7 @@ static int32_t getFilteredRightUS(void) {
     int32_t distance = 0;
 
     for (uint8_t i = 0; i < us1Buffer->size; i++) {
-        distance += us1Buffer->data[i];
+        distance += circBuffer_read(us1Buffer);
     }
 
     return distance / us1Buffer->size;
@@ -209,7 +209,7 @@ static int32_t getFilteredTopIR(void) {
     int32_t distance = 0;
 
     for (uint8_t i = 0; i < ir0Buffer->size; i++) {
-        distance += ir0Buffer->data[i];
+        distance += circBuffer_read(ir0Buffer);
     }
 
     return distance / ir0Buffer->size;
@@ -225,7 +225,7 @@ static int32_t getFilteredBottomIR(void) {
     int32_t distance = 0;
 
     for (uint8_t i = 0; i < ir1Buffer->size; i++) {
-        distance += ir1Buffer->data[i];
+        distance += circBuffer_read(ir1Buffer);
     }
 
     return distance / ir1Buffer->size;
