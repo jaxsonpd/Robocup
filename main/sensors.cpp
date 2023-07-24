@@ -27,8 +27,12 @@
 // ===================================== Constants ====================================
 #define HEADING_OFFSET 360
 #define MAX_HEADING 180
+#define HEADING_BOUND 2
+
 
 #define BUFFER_SIZE 8
+
+
 
 // ===================================== Globals ======================================
 // Check I2C device address and correct line below (by default address is 0x29 or 0x28)
@@ -142,9 +146,19 @@ static void getUSDistances(uint16_t distances[US_NUM]) {
  * @return the heading in degrees
  */
 static int16_t getHeading(void) {
+    static int16_t prevHeading = 0;
+
     imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
     int16_t heading = euler.x();
 
+    // Filter out bad zeros
+    if (heading == 0 && (prevHeading > HEADING_BOUND && prevHeading < (360 - HEADING_BOUND))) { // Giving bad data
+        heading = prevHeading;        
+    } else {
+        prevHeading = heading;
+    }
+
+    // Bound to 180 to -180
     if (heading > MAX_HEADING) {
         heading -= HEADING_OFFSET;
     }
@@ -162,7 +176,7 @@ static int32_t getFilteredHeading(void) {
 
     for (uint8_t i = 0; i < headingBuffer->size; i++) {
         heading += circBuffer_read(headingBuffer);
-    }
+    }        
 
     return heading / headingBuffer->size;
 }
@@ -252,14 +266,15 @@ void sensors_updateInfo(RobotInfo_t* robotInfo) {
 void sensors_update(void) {
     // Add the new readings to the buffers
     getUSDistances(usDistances);
+    
+    // Start new ping cycle
+    pingUS();
+    
     circBuffer_write(us0Buffer, usDistances[0]);
     circBuffer_write(us1Buffer, usDistances[1]);
     circBuffer_write(ir0Buffer, getIRTriDistance(top_IRTriSensor));
     circBuffer_write(ir1Buffer, getIRTriDistance(bottom_IRTriSensor));
     circBuffer_write(headingBuffer, getHeading());
-
-    // Start new ping cycle
-    pingUS();
-
-    // delay(30); // Allow the sensors to update
 }
+
+    
