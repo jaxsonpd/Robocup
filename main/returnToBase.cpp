@@ -10,7 +10,7 @@
 #include <arduino.h>
 
 #include "returnToBase.hpp"
-
+#include "sensors.hpp"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -20,8 +20,29 @@
 
 // ===================================== Globals ======================================
 
+#define homeHeading 0
+#define turnRight 90
+#define turnLeft -90
+static enum homingState {headHome = 0, hugLeft, hugRight, home}
 
 // ===================================== Function Definitions =========================
 
+void homeReturn(RobotInfo_t* robotInfo) {
+    switch (homingState)
+    {
+    case headHome:
+        /* code */
+        break;
+    case hugLeft:
 
+        break;
+    case hugRight:
+
+        break;  
+    case home:
+
+    }
+    
+
+}
 
