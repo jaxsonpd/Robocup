@@ -32,7 +32,7 @@ void printRobotInfo(RobotInfo_t* robotInfo) {
     // Print the robot info
     char buffer[100];
 
-    sprintf(buffer, "Robot Info: %2d\%, %2d\%, US: %4d mm, %4d mm, IR: %4d mm , %4d mm %3d deg\n",
+    sprintf(buffer, "M: L-%2d\%, R-%2d\%, US: L-%4d mm, R-%4d mm, IR: T-%4d mm, B-%4d mm, H-%3d deg, SP-%3 deg\n",
         robotInfo->leftMotorSpeed,
         robotInfo->rightMotorSpeed,
 
@@ -42,7 +42,8 @@ void printRobotInfo(RobotInfo_t* robotInfo) {
         robotInfo->IRTop_Distance,
         robotInfo->IRBottom_Distance,
         
-        robotInfo->IMU_Heading);
+        robotInfo->IMU_Heading,
+        robotInfo->targetHeading);
 
     Serial.print(buffer);
 }  

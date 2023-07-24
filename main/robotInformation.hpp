@@ -34,6 +34,7 @@ typedef struct {
 
     // IMU
     int16_t IMU_Heading; // IMU heading in degrees
+    int16_t targetHeading; // Target heading in degrees
 } RobotInfo_t;
 
 
