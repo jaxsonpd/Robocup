@@ -32,6 +32,10 @@
 
 #define BUFFER_SIZE 8
 
+#define K_1 104
+#define K_2 88887
+#define K_3 -16
+
 
 
 // ===================================== Globals ======================================
@@ -106,16 +110,16 @@ bool sensors_init(void) {
  */
 static uint16_t getIRTriDistance(irTri_sensor_t sensor) {
     uint16_t rawValue = analogRead(sensor.pin);
-    // uint16_t distance = 0;
+    uint16_t distance = 0;
 
-    // if (sensor.type == 0) {
-    //     return 0;
-    // } else if (sensor.type == 1) {
-    //     return 0;
-    // } else if (sensor.type == IRTRI_20_150) { // 20-150cm IR Sensor
-    //     distance = rawValue;
-    // }
-    return rawValue;
+    if (sensor.type == 0) {
+        return 0;
+    } else if (sensor.type == 1) {
+        return 0;
+    } else if (sensor.type == IRTRI_20_150) { // 20-150cm IR Sensor
+        distance = K_1 + (K_2 / (rawValue + K_3));
+    }
+    return distance;
 }   
 
 
