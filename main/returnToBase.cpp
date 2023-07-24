@@ -8,11 +8,12 @@
 
 // ===================================== Includes =====================================
 #include <arduino.h>
+#include <stdint.h>
+#include <stdbool.h>
 
 #include "returnToBase.hpp"
 #include "sensors.hpp"
-#include <stdint.h>
-#include <stdbool.h>
+#include "motors.hpp"
 
 
 // ===================================== Types/Constants ==============================
@@ -23,7 +24,8 @@
 #define homeHeading 0
 #define turnRight 90
 #define turnLeft -90
-static enum homingState {headHome = 0, hugLeft, hugRight, home}
+#define testSpeed 60
+static enum homingState {headHome = 0, hugWall,hugLeft, hugRight, home}
 
 // ===================================== Function Definitions =========================
 
@@ -32,17 +34,32 @@ void homeReturn(RobotInfo_t* robotInfo) {
     {
     case headHome:
         /* code */
+        motors_followHeading(&robotInfo, headHome, testSpeed);
+        if (wallHit()) { //Make function for detecting wall hit
+
+        }
         break;
-    case hugLeft:
+    case hugWall:
+        if (wallHit()) { 
+            //turn away from hugged wall
+         
+        } else if (wallEnds()) { // large sudden distance between wall and robot - wall ends
+          
+            //Drive x then Turn toward hugged wall
+        }
+        
+
 
         break;
-    case hugRight:
+    // case hugRight:
 
-        break;  
+    //     break;  
     case home:
-
+        //unloaded weight sequence
+        //reutrn to search algorithm
     }
-    
-
+    if (homeFound()) {
+        homingState = home;
+    }
 }
 
