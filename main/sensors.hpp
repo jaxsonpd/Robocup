@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "USConfig.hpp"
+#include "src/USConfig.hpp"
 #include "robotInformation.hpp"
 
 // ===================================== Types/Constants ==============================
@@ -27,9 +27,6 @@ typedef struct {
 
 // ===================================== Function Prototypes ==========================
 bool sensors_init(void);
-uint16_t sensors_getIRTriDistance(irTri_sensor_t sensor);
-void sensors_pingUS(void);
-void sensors_getUSDistances(uint16_t distances[US_NUM]);
 void sensors_updateInfo(RobotInfo_t* robotInfo);
 void sensors_update(void);
 

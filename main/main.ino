@@ -25,7 +25,6 @@
 
 // ===================================== Globals ======================================
 bool running = true; // Whether the robot is running or not
-extern uint8_t numUS; // Number of ultrasonic sensors from sensors.cpp
 
 // robotInfo struct 
 RobotInfo_t robotInfo = {0};
@@ -52,10 +51,12 @@ void robot_setup() {
 	running = true;
 }
 
+
 void setup() {} // Keep the Arduino IDE happy
 
 void loop() {
 	robot_setup();
+    uint32_t loopNum = 0;
 
 	while(running) {
         sensors_update();
@@ -67,10 +68,18 @@ void loop() {
         // perform actions
         printRobotInfo(&robotInfo);
 
+        if (loopNum == 80) {
+            motors_formShape(&robotInfo, 5000, 90);
+            loopNum = 0;
+        }
+        
+        // motors_setSpeed(MOTOR_1, 60);
+        // motors_setSpeed(MOTOR_2, 60);
+
         // Check if the robot should keep running
         running = checkStopped();
 
-        delay(10);
+        loopNum ++;
 	}
 }
 
