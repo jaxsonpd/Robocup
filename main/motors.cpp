@@ -29,10 +29,11 @@
 #define D_CONTROL_GAIN 0 //  /100
 #define GAIN_SCALING 100
 
-#define SETPOINT_TOLERANCE 2 // Max error to recognise at setpoint
+#define SETPOINT_TOLERANCE 5 // Max error to recognise at setpoint
 #define SETPOINT_TIME 100 // Time before registering at setpoint
 
 #define MAX_HEADING 180
+#define MIN_HEADING -179
 #define HEADING_OFFSET 360
 
 #define MS_TO_S 1000
@@ -41,8 +42,8 @@
 Servo M1, M2; // Define the servo objects for each motor
 
 // ===================================== Globals ======================================
-int8_t motor1Speed = 0; // Speed of motor 1 (-100 to 100)
-int8_t motor2Speed = 0; // Speed of motor 2 (-100 to 100)
+int16_t motor1Speed = 0; // Speed of motor 1 (-100 to 100)
+int16_t motor2Speed = 0; // Speed of motor 2 (-100 to 100)
 int16_t headingSP = 0;
 
 // ===================================== Function Definitions =========================
@@ -74,8 +75,8 @@ bool motors_setSpeed(uint8_t selectedMotor, int8_t speed) {
     // Check to see if the speed is in range
     if (speed > MOTOR_SPEED_MAX || speed < MOTOR_SPEED_MIN) {
         inBound = false;
-        speed = (speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : speed;
-        speed = (speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : speed;
+        // speed = (speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : speed;
+        // speed = (speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : speed;
     }
 
     // Invert motor 2 speed
@@ -129,8 +130,11 @@ bool motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16
     int32_t error = headingSetpoint - robotInfo->IMU_Heading;
 
     // Ensure error is pointing the right way
-    if (abs(error) >= MAX_HEADING) {
-        error = (error > 0) ? error - HEADING_OFFSET : error + HEADING_OFFSET;
+
+    if (error >= MAX_HEADING) {
+      error -= HEADING_OFFSET;
+    } else if (error < MIN_HEADING) {
+      error += HEADING_OFFSET;
     }
 
     // Calculate the integral error
@@ -149,18 +153,18 @@ bool motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16
                             + (D_CONTROL_GAIN * errorDer)/MS_TO_S)
                             /GAIN_SCALING;
     
-
+    Serial.print(controlValue);
     // Calculate the motor speeds
     motor1Speed = speed + controlValue;
     motor2Speed = speed - controlValue;
     headingSP = headingSetpoint;
 
     // Check to see if the motor speeds are in range
-    // motor1Speed = (motor1Speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : motor1Speed;
-    // motor1Speed = (motor1Speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor1Speed;
+    motor1Speed = (motor1Speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : motor1Speed;
+    motor1Speed = (motor1Speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor1Speed;
     
-    // motor2Speed = (motor2Speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : motor2Speed;
-    // motor2Speed = (motor2Speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor2Speed;
+    motor2Speed = (motor2Speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : motor2Speed;
+    motor2Speed = (motor2Speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor2Speed;
 
     // Set the motor speeds
     motors_setSpeed(MOTOR_1, motor1Speed);
@@ -209,8 +213,8 @@ bool motors_formShape(RobotInfo_t *robotInfo, uint32_t sideLenght, int16_t rotat
             }
             break;
         case 1: // Turn 90 degrees
-            atSetpoint = motors_followHeading(robotInfo, targetHeading, 0);
-            if (atSetpoint) {
+            atSetpoint = motors_followHeading(robotInfo, targetHeading, 10);
+            if (atSetpoint == 0) {
                 state = 0;
                 timeAtState = 0;
             }
