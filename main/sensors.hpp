@@ -14,7 +14,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "USConfig.hpp"
+#include "src/USConfig.hpp"
 #include "robotInformation.hpp"
 
 // ===================================== Types/Constants ==============================

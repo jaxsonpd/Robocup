@@ -193,7 +193,7 @@ bool motors_formShape(RobotInfo_t *robotInfo, uint32_t sideLenght, int16_t rotat
     static uint8_t state = 0;
     static elapsedMillis timeAtState;
     static int16_t targetHeading = 0;
-    bool atSetpoint;
+    bool atSetpoint = 0;
 
     switch (state) {
         case 0: // Move forward
@@ -209,7 +209,7 @@ bool motors_formShape(RobotInfo_t *robotInfo, uint32_t sideLenght, int16_t rotat
             }
             break;
         case 1: // Turn 90 degrees
-            atSetpoint = motors_followHeading(robotInfo, targetHeading, 0)
+            atSetpoint = motors_followHeading(robotInfo, targetHeading, 0);
             if (atSetpoint) {
                 state = 0;
                 timeAtState = 0;

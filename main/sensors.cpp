@@ -14,12 +14,12 @@
 #include <utility/imumaths.h>
 
 #include "sensors.hpp"
-#include "ultrasonic.hpp"
+#include "src/ultrasonic.hpp"
 #include "robotInformation.hpp"
-#include "circBuffer.hpp"
+#include "src/circBuffer.hpp"
 
-#include "USConfig.hpp"
-#include "IRConfig.hpp"
+#include "src/USConfig.hpp"
+#include "src/IRConfig.hpp"
 
 #include <stdint.h>
 #include <stdbool.h>
