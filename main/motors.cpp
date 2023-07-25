@@ -75,8 +75,8 @@ bool motors_setSpeed(uint8_t selectedMotor, int8_t speed) {
     // Check to see if the speed is in range
     if (speed > MOTOR_SPEED_MAX || speed < MOTOR_SPEED_MIN) {
         inBound = false;
-        // speed = (speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : speed;
-        // speed = (speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : speed;
+        speed = (speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : speed;
+        speed = (speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : speed;
     }
 
     // Invert motor 2 speed
@@ -160,11 +160,11 @@ bool motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16
     headingSP = headingSetpoint;
 
     // Check to see if the motor speeds are in range
-    motor1Speed = (motor1Speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : motor1Speed;
-    motor1Speed = (motor1Speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor1Speed;
+    // motor1Speed = (motor1Speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : motor1Speed;
+    // motor1Speed = (motor1Speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor1Speed;
     
-    motor2Speed = (motor2Speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : motor2Speed;
-    motor2Speed = (motor2Speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor2Speed;
+    // motor2Speed = (motor2Speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : motor2Speed;
+    // motor2Speed = (motor2Speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor2Speed;
 
     // Set the motor speeds
     motors_setSpeed(MOTOR_1, motor1Speed);

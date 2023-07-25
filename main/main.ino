@@ -58,6 +58,8 @@ void loop() {
     elapsedMillis sensorUpdateTimer = 0;
     elapsedMillis robotInfoUpdateTimer = 0;
     elapsedMillis PIDTimer = 0;
+    elapsedMIllis slowUpdateTimer = 0;
+    bool offSetpoint = 0;
 
 	robot_setup();
 
@@ -76,9 +78,22 @@ void loop() {
         
         // perform actions
         if (PIDTimer > 100) {
-            motors_formShape(&robotInfo, 5000, 90);
+            offSetpoint = motors_formShape(&robotInfo, 5000, 90);
+
             PIDTimer = 0;
         }
+
+        if (slowUpdateTimer == 1000) {
+            if (offSetpoint) {
+                setLED(LED_RED, 1);
+            } else {
+                setLED(LED_GREEN, 1);
+            }
+        }
+
+
+
+
 
         // Check if the robot should keep running
         running = checkStopped();
