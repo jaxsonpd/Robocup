@@ -13,6 +13,7 @@
 #include <stdlib.h>
 
 #include "returnToBase.hpp"
+#include "robotInformation.hpp"
 #include "sensors.hpp"
 #include "motors.hpp"
 

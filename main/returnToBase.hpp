@@ -13,12 +13,13 @@
 // ===================================== Includes =====================================
 #include <stdint.h>
 #include <stdbool.h>
-
+#include "robotInformation.hpp"
 
 // ===================================== Types/Constants ==============================
 
 
 // ===================================== Function Prototypes ==========================
 
+void homeReturn(RobotInfo_t* robotInfo)
 
 #endif // RETURNTOBASE_H

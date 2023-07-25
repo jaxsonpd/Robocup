@@ -14,7 +14,7 @@
 #include "sensors.hpp"
 #include "utils.hpp"
 #include "robotInformation.hpp"
-
+#include "returnToBase.hpp"
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -69,7 +69,7 @@ void loop() {
         printRobotInfo(&robotInfo);
 
         if (loopNum == 80) {
-            motors_formShape(&robotInfo, 5000, 90);
+            homeReturn(&robotInfo);
             loopNum = 0;
         }
         
