@@ -78,3 +78,19 @@ void circBuffer_free(circBuffer_t *circBuffer) {
 }
 
 
+/** 
+ * @brief Return the average of the values in the circular buffer
+ * @param circBuffer pointer to the circular buffer to average
+ * 
+ * @return the average value
+ */
+int32_t circBuffer_average(circBuffer_t *circBuffer) {
+    int32_t sum = 0;
+
+    for (int i = 0; i < circBuffer->size; i++) {
+        sum += circBuffer->data[i];
+    }
+
+    return sum / circBuffer->size;
+}
+
