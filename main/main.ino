@@ -55,31 +55,34 @@ void robot_setup() {
 void setup() {} // Keep the Arduino IDE happy
 
 void loop() {
+    elapsedMillis sensorUpdateTimer = 0;
+    elapsedMillis robotInfoUpdateTimer = 0;
+    elapsedMillis PIDTimer = 0;
+
 	robot_setup();
-    uint32_t loopNum = 0;
 
 	while(running) {
-        sensors_update();
+        if (sensorUpdateTimer > 5) {
+            sensors_update();
+            sensorUpdateTimer = 0;
+        }
 
         // Update robot information
-        motors_updateInfo(&robotInfo);
-        sensors_updateInfo(&robotInfo);
-        
-        // perform actions
-        printRobotInfo(&robotInfo);
-
-        if (loopNum == 1) {
-            motors_formShape(&robotInfo, 10000, 90);
-            loopNum = 0;
+        if (robotInfoUpdateTimer > 100) {
+            motors_updateInfo(&robotInfo);
+            sensors_updateInfo(&robotInfo);
+            robotInfoUpdateTimer = 0;
         }
         
-        // motors_setSpeed(MOTOR_1, 60);
-        // motors_setSpeed(MOTOR_2, 60);
+        // perform actions
+        if (PIDTimer > 100) {
+            motors_formShape(&robotInfo, 5000, 90);
+            PIDTimer = 0;
+        }
 
         // Check if the robot should keep running
         running = checkStopped();
 
-        loopNum ++;
 	}
 }
 
