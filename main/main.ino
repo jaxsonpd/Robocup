@@ -68,8 +68,8 @@ void loop() {
         // perform actions
         printRobotInfo(&robotInfo);
 
-        if (loopNum == 80) {
-            motors_formShape(&robotInfo, 5000, 90);
+        if (loopNum == 1) {
+            motors_formShape(&robotInfo, 10000, 90);
             loopNum = 0;
         }
         
