@@ -44,13 +44,13 @@ void sideHugged() { //determine what wall to hug based wall detected while headi
 }
 
 int8_t homeFound() {
-    
+    return 0;
 }
 
 void wallFollow(RobotInfo_t* robotInfo) {
   if ((robotInfo->IRTop_Distance <=20) && (robotInfo->IRBottom_Distance <= 20)) { //wall detected in front of robot
     wallHit = 1;
-  } else if (USSpike) {
+  //} else if (USSpike) {
 
   }
 }
@@ -71,8 +71,8 @@ void corner(int8_t cornerHeading) {
     
     if(turnHeading > halfCircle) {
         turnHeading -= fullCircle;
-    } else if (yaw <= -halfCircle) {
-        yaw += fullCircle;
+    } else if (turnHeading <= -halfCircle) {
+        turnHeading += fullCircle;
     }
 
 
@@ -95,14 +95,14 @@ void homeReturn(RobotInfo_t* robotInfo) {
         if (wallHit) { 
           //turn away from hugged wall
           corner(turnRight); //temp
-          hitWall = 0;
+          wallHit = 0;
         } else if (wallEnd) { // large sudden distance between wall and robot - wall ends
           corner(-turnRight);
           wallEnd = 0;
             //Drive a little then Turn towards hugged wall
         }
-        motors_followHeading(robotInfo, turnHeading, 0);
-        if ( abs(robotInfo->IMU_Heading - turnHeading) <=3) { //turn on the spot till within tolerance of new heading
+        if (!motors_followHeading(robotInfo, turnHeading, 0)) {
+        //if ( abs(robotInfo->IMU_Heading - turnHeading) <=3) { //turn on the spot till within tolerance of new heading
             motors_followHeading(robotInfo, turnHeading, testSpeed);
         }
         
@@ -112,8 +112,8 @@ void homeReturn(RobotInfo_t* robotInfo) {
     // case hugRight:
 
     //     break;  
-      case home:
-        int8_t b;
+      // case home:
+        
         //unloaded weight sequence
         //return to search algorithm
     }
