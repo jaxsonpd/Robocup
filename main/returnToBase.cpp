@@ -29,6 +29,7 @@
 #define testSpeed 60
 #define fullCircle 360
 #define halfCircle 180
+#define turnDist 300
 enum homingStates {headHome = 0, hugWall,hugLeft, hugRight, home};
 enum wallHugged {right = 90, left = -90};
 int16_t turnHeading;  // heading for turning around a corner
@@ -49,7 +50,7 @@ int8_t homeFound() {
 }
 
 void wallFollow(RobotInfo_t* robotInfo) {
-  if ((robotInfo->IRTop_Distance <=20) && (robotInfo->IRBottom_Distance <= 20)) { //wall detected in front of robot
+  if ((robotInfo->IRTop_Distance <=turnDist) && (robotInfo->IRBottom_Distance <= turnDist)) { //wall detected in front of robot
     wallHit = 1;
   //} else if (USSpike) {
 
@@ -96,7 +97,7 @@ void homeReturn(RobotInfo_t* robotInfo) {
         if (wallHit) { 
           //turn away from hugged wall
           corner(turnRight); //temp
-          wallHit = 0;
+          
         } else if (wallEnd) { // large sudden distance between wall and robot - wall ends
           corner(-turnRight);
           wallEnd = 0;
@@ -104,13 +105,14 @@ void homeReturn(RobotInfo_t* robotInfo) {
         }
         if (!motors_followHeading(robotInfo, turnHeading, 0)) {
         //if ( abs(robotInfo->IMU_Heading - turnHeading) <=3) { //turn on the spot till within tolerance of new heading
-            motors_followHeading(robotInfo, turnHeading, testSpeed);
+            motors_followHeading(robotInfo, turnHeading, testSpeed);   
+            wallHit = 0;
         }
         
 
 
         break;
-    // case hugRight:
+    // case:
 
     //     break;  
       // case home:

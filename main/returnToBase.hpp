@@ -20,6 +20,6 @@
 
 // ===================================== Function Prototypes ==========================
 
-void homeReturn(RobotInfo_t* robotInfo)
+void homeReturn(RobotInfo_t* robotInfo);
 
 #endif // RETURNTOBASE_H

@@ -68,14 +68,9 @@ void loop() {
         // perform actions
         printRobotInfo(&robotInfo);
 
-<<<<<<< HEAD
         if (loopNum == 80) {
             homeReturn(&robotInfo);
-=======
-        if (loopNum == 1) {
-            motors_formShape(&robotInfo, 10000, 90);
->>>>>>> 9441c6450879bccf47c3a46143980f597a005db2
-            loopNum = 0;
+
         }
         
         // motors_setSpeed(MOTOR_1, 60);
