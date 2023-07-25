@@ -27,8 +27,16 @@
 // ===================================== Constants ====================================
 #define HEADING_OFFSET 360
 #define MAX_HEADING 180
+#define HEADING_BOUND 2
+
 
 #define BUFFER_SIZE 8
+
+#define K_1 104
+#define K_2 88887
+#define K_3 -16
+
+
 
 // ===================================== Globals ======================================
 // Check I2C device address and correct line below (by default address is 0x29 or 0x28)
@@ -102,16 +110,16 @@ bool sensors_init(void) {
  */
 static uint16_t getIRTriDistance(irTri_sensor_t sensor) {
     uint16_t rawValue = analogRead(sensor.pin);
-    // uint16_t distance = 0;
+    uint16_t distance = 0;
 
-    // if (sensor.type == 0) {
-    //     return 0;
-    // } else if (sensor.type == 1) {
-    //     return 0;
-    // } else if (sensor.type == IRTRI_20_150) { // 20-150cm IR Sensor
-    //     distance = rawValue;
-    // }
-    return rawValue;
+    if (sensor.type == 0) {
+        return 0;
+    } else if (sensor.type == 1) {
+        return 0;
+    } else if (sensor.type == IRTRI_20_150) { // 20-150cm IR Sensor
+        distance = K_1 + (K_2 / (rawValue + K_3));
+    }
+    return distance;
 }   
 
 
@@ -142,9 +150,19 @@ static void getUSDistances(uint16_t distances[US_NUM]) {
  * @return the heading in degrees
  */
 static int16_t getHeading(void) {
+    static int16_t prevHeading = 0;
+
     imu::Vector<3> euler = bno.getVector(Adafruit_BNO055::VECTOR_EULER);
     int16_t heading = euler.x();
 
+    // Filter out bad zeros
+    if (heading == 0 && (prevHeading > HEADING_BOUND && prevHeading < (360 - HEADING_BOUND))) { // Giving bad data
+        heading = prevHeading;        
+    } else {
+        prevHeading = heading;
+    }
+
+    // Bound to 180 to -180
     if (heading > MAX_HEADING) {
         heading -= HEADING_OFFSET;
     }
@@ -158,13 +176,7 @@ static int16_t getHeading(void) {
  * @return the filtered heading in degrees
  */
 static int32_t getFilteredHeading(void) {
-    int32_t heading = 0;
-
-    for (uint8_t i = 0; i < headingBuffer->size; i++) {
-        heading += headingBuffer->data[i];
-    }
-
-    return headingBuffer->data[0];
+    return circBuffer_average(headingBuffer);
 }
 
 
@@ -174,13 +186,7 @@ static int32_t getFilteredHeading(void) {
  * @return the filtered distance in mm
  */
 static int32_t getFilteredLeftUS(void) {
-    uint16_t distance = 0;
-
-    for (uint8_t i = 0; i < us0Buffer->size; i++) {
-        distance += us0Buffer->data[i];
-    }
-
-    return distance / us0Buffer->size;
+    return circBuffer_average(us0Buffer);
 }
 
 
@@ -190,13 +196,7 @@ static int32_t getFilteredLeftUS(void) {
  * @return the filtered distance in mm
  */
 static int32_t getFilteredRightUS(void) {
-    int32_t distance = 0;
-
-    for (uint8_t i = 0; i < us1Buffer->size; i++) {
-        distance += us1Buffer->data[i];
-    }
-
-    return distance / us1Buffer->size;
+    return circBuffer_average(us1Buffer);
 }
 
 
@@ -206,13 +206,7 @@ static int32_t getFilteredRightUS(void) {
  * @return the filtered distance in mm
  */
 static int32_t getFilteredTopIR(void) {
-    int32_t distance = 0;
-
-    for (uint8_t i = 0; i < ir0Buffer->size; i++) {
-        distance += ir0Buffer->data[i];
-    }
-
-    return distance / ir0Buffer->size;
+    return circBuffer_average(ir0Buffer);
 }
 
 
@@ -222,13 +216,7 @@ static int32_t getFilteredTopIR(void) {
  * @return the filtered distance in mm
  */
 static int32_t getFilteredBottomIR(void) {
-    int32_t distance = 0;
-
-    for (uint8_t i = 0; i < ir1Buffer->size; i++) {
-        distance += ir1Buffer->data[i];
-    }
-
-    return distance / ir1Buffer->size;
+    return circBuffer_average(ir1Buffer);
 }
 
 
@@ -252,14 +240,15 @@ void sensors_updateInfo(RobotInfo_t* robotInfo) {
 void sensors_update(void) {
     // Add the new readings to the buffers
     getUSDistances(usDistances);
+    
+    // Start new ping cycle
+    pingUS();
+    
     circBuffer_write(us0Buffer, usDistances[0]);
     circBuffer_write(us1Buffer, usDistances[1]);
     circBuffer_write(ir0Buffer, getIRTriDistance(top_IRTriSensor));
     circBuffer_write(ir1Buffer, getIRTriDistance(bottom_IRTriSensor));
     circBuffer_write(headingBuffer, getHeading());
-
-    // Start new ping cycle
-    pingUS();
-
-    // delay(30); // Allow the sensors to update
 }
+
+    

@@ -28,6 +28,7 @@ enum motor { // Motor selection enum
 bool motors_setup();
 bool motors_setSpeed(uint8_t selectedMotor, int8_t speed);
 void motors_updateInfo(RobotInfo_t *robotInfo);
-void motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16_t speed);
+bool motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16_t speed);
+bool motors_formShape(RobotInfo_t *robotInfo, uint32_t sideLenght, int16_t rotationAngle);
 
 #endif // MOTOR_H
