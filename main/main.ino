@@ -15,7 +15,10 @@
 #include "utils.hpp"
 #include "robotInformation.hpp"
 #include "returnToBase.hpp"
+<<<<<<< main/main.ino
 
+=======
+>>>>>>> main/main.ino
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -83,6 +86,7 @@ void loop() {
         if (PIDTimer > 200) {
             homeReturn(&robotInfo);
 
+<<<<<<< main/main.ino
             PIDTimer = 0;
         }
 
@@ -92,6 +96,11 @@ void loop() {
             } else {
                 setLED(LED_GREEN, 1);
             }
+=======
+        if (loopNum == 80) {
+            homeReturn(&robotInfo);
+
+>>>>>>> main/main.ino
         }
 
         // Check if the robot should keep running
