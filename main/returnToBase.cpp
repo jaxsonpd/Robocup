@@ -13,6 +13,7 @@
 #include <stdlib.h>
 
 #include "returnToBase.hpp"
+#include "robotInformation.hpp"
 #include "sensors.hpp"
 #include "motors.hpp"
 
@@ -28,6 +29,7 @@
 #define testSpeed 60
 #define fullCircle 360
 #define halfCircle 180
+#define turnDist 240
 enum homingStates {headHome = 0, hugWall,hugLeft, hugRight, home};
 enum wallHugged {right = 90, left = -90};
 int16_t turnHeading;  // heading for turning around a corner
@@ -44,13 +46,13 @@ void sideHugged() { //determine what wall to hug based wall detected while headi
 }
 
 int8_t homeFound() {
-    
+    return 0;
 }
 
 void wallFollow(RobotInfo_t* robotInfo) {
-  if ((robotInfo->IRTop_Distance <=20) && (robotInfo->IRBottom_Distance <= 20)) { //wall detected in front of robot
+  if ((robotInfo->IRTop_Distance <= turnDist) && (robotInfo->IRBottom_Distance <= turnDist)) { //wall detected in front of robot
     wallHit = 1;
-  } else if (USSpike) {
+  //} else if (USSpike) {
 
   }
 }
@@ -71,15 +73,15 @@ void corner(int8_t cornerHeading) {
     
     if(turnHeading > halfCircle) {
         turnHeading -= fullCircle;
-    } else if (yaw <= -halfCircle) {
-        yaw += fullCircle;
+    } else if (turnHeading <= -halfCircle) {
+        turnHeading += fullCircle;
     }
 
 
 }
 
 void homeReturn(RobotInfo_t* robotInfo) {
-    static int8_t homingState = headHome;
+    static int8_t homingState = hugWall;
     wallFollow(robotInfo);
     switch (homingState)
     {
@@ -92,18 +94,22 @@ void homeReturn(RobotInfo_t* robotInfo) {
         }
         break;  
     case hugWall:
-        if (wallHit) { 
+        if (wallHit && (abs(robotInfo->IMU_Heading - turnHeading) <=5)) { 
           //turn away from hugged wall
           corner(turnRight); //temp
-          hitWall = 0;
+          wallHit = 0;
         } else if (wallEnd) { // large sudden distance between wall and robot - wall ends
           corner(-turnRight);
           wallEnd = 0;
             //Drive a little then Turn towards hugged wall
         }
-        motors_followHeading(robotInfo, turnHeading, 0);
-        if ( abs(robotInfo->IMU_Heading - turnHeading) <=3) { //turn on the spot till within tolerance of new heading
-            motors_followHeading(robotInfo, turnHeading, testSpeed);
+          motors_followHeading(robotInfo, turnHeading, 0);
+        // while((abs(robotInfo->IMU_Heading - turnHeading) <=5)) {
+        // }
+        // if (!motors_followHeading(robotInfo, turnHeading, 0)) {
+        if ( abs(robotInfo->IMU_Heading - turnHeading) <=10) { //turn on the spot till within tolerance of new heading
+          motors_followHeading(robotInfo, turnHeading, testSpeed);
+          
         }
         
 
@@ -112,8 +118,8 @@ void homeReturn(RobotInfo_t* robotInfo) {
     // case hugRight:
 
     //     break;  
-      case home:
-        int8_t b;
+      // case home:
+        
         //unloaded weight sequence
         //return to search algorithm
     }
@@ -121,4 +127,3 @@ void homeReturn(RobotInfo_t* robotInfo) {
     //     homingState = "home";
     // }
 }
-

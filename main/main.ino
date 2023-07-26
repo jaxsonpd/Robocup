@@ -14,13 +14,14 @@
 #include "sensors.hpp"
 #include "utils.hpp"
 #include "robotInformation.hpp"
+#include "returnToBase.hpp"
 
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 
 // ===================================== Constants ====================================
-#define SERIAL_BAUD_RATE 57600
+#define SERIAL_BAUD_RATE 9600
 
 
 // ===================================== Globals ======================================
@@ -35,6 +36,7 @@ RobotInfo_t robotInfo = {0};
 void robot_setup() {
 	// Initialise the serial output
 	serialInit(SERIAL_BAUD_RATE);
+  Serial1.begin(9600);
 
 	// Initialise the main drive motors
 	motors_setup();
@@ -58,7 +60,7 @@ void loop() {
     elapsedMillis sensorUpdateTimer = 0;
     elapsedMillis robotInfoUpdateTimer = 0;
     elapsedMillis PIDTimer = 0;
-    elapsedMIllis slowUpdateTimer = 0;
+    elapsedMillis slowUpdateTimer = 0;
     bool offSetpoint = 0;
 
 	robot_setup();
@@ -73,27 +75,24 @@ void loop() {
         if (robotInfoUpdateTimer > 100) {
             motors_updateInfo(&robotInfo);
             sensors_updateInfo(&robotInfo);
+            printRobotInfo(&robotInfo);
             robotInfoUpdateTimer = 0;
         }
         
         // perform actions
-        if (PIDTimer > 100) {
-            offSetpoint = motors_formShape(&robotInfo, 5000, 90);
+        if (PIDTimer > 200) {
+            homeReturn(&robotInfo);
 
             PIDTimer = 0;
         }
 
-        if (slowUpdateTimer == 1000) {
+        if (slowUpdateTimer > 1000) {
             if (offSetpoint) {
                 setLED(LED_RED, 1);
             } else {
                 setLED(LED_GREEN, 1);
             }
         }
-
-
-
-
 
         // Check if the robot should keep running
         running = checkStopped();

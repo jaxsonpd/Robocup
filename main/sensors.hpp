@@ -19,12 +19,6 @@
 
 // ===================================== Types/Constants ==============================
 
-// IR trangulating sensor struct
-typedef struct {
-    uint8_t pin; // the pin the sensor is connected to
-    uint8_t type; // 0: , 1:, 2: 20-150cm
-} irTri_sensor_t;
-
 // ===================================== Function Prototypes ==========================
 bool sensors_init(void);
 void sensors_updateInfo(RobotInfo_t* robotInfo);
