@@ -38,7 +38,15 @@
 
 
 
+
 // ===================================== Globals ======================================
+// IR trangulating sensor struct
+typedef struct {
+    uint8_t pin; // the pin the sensor is connected to
+    uint8_t type; // 0: , 1:, 2: 20-150cm
+} irTri_sensor_t;
+
+
 // Check I2C device address and correct line below (by default address is 0x29 or 0x28)
 //                                   id, address
 Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);

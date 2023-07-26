@@ -15,12 +15,16 @@
 #include "utils.hpp"
 #include "robotInformation.hpp"
 #include "returnToBase.hpp"
+<<<<<<< main/main.ino
+
+=======
+>>>>>>> main/main.ino
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 
 // ===================================== Constants ====================================
-#define SERIAL_BAUD_RATE 57600
+#define SERIAL_BAUD_RATE 9600
 
 
 // ===================================== Globals ======================================
@@ -35,6 +39,7 @@ RobotInfo_t robotInfo = {0};
 void robot_setup() {
 	// Initialise the serial output
 	serialInit(SERIAL_BAUD_RATE);
+  Serial1.begin(9600);
 
 	// Initialise the main drive motors
 	motors_setup();
@@ -55,31 +60,52 @@ void robot_setup() {
 void setup() {} // Keep the Arduino IDE happy
 
 void loop() {
+    elapsedMillis sensorUpdateTimer = 0;
+    elapsedMillis robotInfoUpdateTimer = 0;
+    elapsedMillis PIDTimer = 0;
+    elapsedMillis slowUpdateTimer = 0;
+    bool offSetpoint = 0;
+
 	robot_setup();
-    uint32_t loopNum = 0;
 
 	while(running) {
-        sensors_update();
+        if (sensorUpdateTimer > 5) {
+            sensors_update();
+            sensorUpdateTimer = 0;
+        }
 
         // Update robot information
-        motors_updateInfo(&robotInfo);
-        sensors_updateInfo(&robotInfo);
+        if (robotInfoUpdateTimer > 100) {
+            motors_updateInfo(&robotInfo);
+            sensors_updateInfo(&robotInfo);
+            printRobotInfo(&robotInfo);
+            robotInfoUpdateTimer = 0;
+        }
         
         // perform actions
-        printRobotInfo(&robotInfo);
+        if (PIDTimer > 200) {
+            homeReturn(&robotInfo);
 
+<<<<<<< main/main.ino
+            PIDTimer = 0;
+        }
+
+        if (slowUpdateTimer > 1000) {
+            if (offSetpoint) {
+                setLED(LED_RED, 1);
+            } else {
+                setLED(LED_GREEN, 1);
+            }
+=======
         if (loopNum == 80) {
             homeReturn(&robotInfo);
 
+>>>>>>> main/main.ino
         }
-        
-        // motors_setSpeed(MOTOR_1, 60);
-        // motors_setSpeed(MOTOR_2, 60);
 
         // Check if the robot should keep running
         running = checkStopped();
 
-        loopNum ++;
 	}
 }
 

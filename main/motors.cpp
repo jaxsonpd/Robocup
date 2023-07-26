@@ -18,13 +18,13 @@
 
 // ===================================== Constants ====================================
 // ** DC Motor parameters **
-#define MOTOR_1_PIN 0
-#define MOTOR_2_PIN 1
+#define MOTOR_1_PIN 7
+#define MOTOR_2_PIN 8
 
 #define MOTOR_SPEED_MAX 100
 #define MOTOR_SPEED_MIN -100
 
-#define P_CONTROL_GAIN 350 //  /100
+#define P_CONTROL_GAIN 100 //  /100
 #define I_CONTROL_GAIN 0 //  /100
 #define D_CONTROL_GAIN 0 //  /100
 #define GAIN_SCALING 100
@@ -110,6 +110,20 @@ void motors_updateInfo(RobotInfo_t *robotInfo) {
     robotInfo->leftMotorSpeed = motor1Speed;
     robotInfo->rightMotorSpeed = motor2Speed;
     robotInfo->targetHeading = headingSP;
+
+    // Check to see if the robot is at the setpoint
+    static elapsedMillis timeAtSetpoint = 0;
+
+    if (abs(robotInfo->targetHeading - robotInfo->IMU_Heading) <= SETPOINT_TOLERANCE) {
+        if (timeAtSetpoint > SETPOINT_TIME) {
+            robotInfo->atHeading = true;
+        }
+    } else {
+        robotInfo->atHeading = false;
+        timeAtSetpoint = 0;
+    }
+
+
 }
 
 
@@ -153,7 +167,6 @@ bool motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16
                             + (D_CONTROL_GAIN * errorDer)/MS_TO_S)
                             /GAIN_SCALING;
     
-    Serial.print(controlValue);
     // Calculate the motor speeds
     motor1Speed = speed + controlValue;
     motor2Speed = speed - controlValue;
@@ -201,7 +214,7 @@ bool motors_formShape(RobotInfo_t *robotInfo, uint32_t sideLenght, int16_t rotat
 
     switch (state) {
         case 0: // Move forward
-            atSetpoint = motors_followHeading(robotInfo, targetHeading, 60);
+            atSetpoint = motors_followHeading(robotInfo, targetHeading, 40);
             if (timeAtState > sideLenght) {
                 state = 1;
                 timeAtState = 0;
@@ -213,7 +226,7 @@ bool motors_formShape(RobotInfo_t *robotInfo, uint32_t sideLenght, int16_t rotat
             }
             break;
         case 1: // Turn 90 degrees
-            atSetpoint = motors_followHeading(robotInfo, targetHeading, 10);
+            atSetpoint = motors_followHeading(robotInfo, targetHeading, 0);
             if (atSetpoint == 0) {
                 state = 0;
                 timeAtState = 0;

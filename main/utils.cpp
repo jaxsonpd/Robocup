@@ -16,6 +16,9 @@
 
 // ===================================== Types/Constants ==============================
 #define GO_BUTTON_PIN 26
+#define GREEN_LED_PIN 27
+#define RED_LED_PIN 28
+#define BLUE_LED_PIN 29
 
 // ===================================== Globals ======================================
 
@@ -69,4 +72,22 @@ bool checkStopped() {
     }
 
     return true;
+}
+
+
+/** 
+ * @brief Set the LED colours
+ * @param ledColor The colout to set the LED to
+ * @param brightness The brightness of the LED (0 or 1)
+ * 
+ * 
+ */
+void setLED(uint8_t ledColor, uint8_t brightness) {
+    if (ledColor == LED_RED) {
+        digitalWrite(RED_LED_PIN, brightness);
+    } else if (ledColor == LED_GREEN) {
+        digitalWrite(GREEN_LED_PIN, brightness);
+    } else if (ledColor == LED_BLUE) {
+        digitalWrite(BLUE_LED_PIN, brightness);
+    }
 }

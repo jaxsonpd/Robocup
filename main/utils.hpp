@@ -18,11 +18,16 @@
 
 
 // ===================================== Types/Constants ==============================
-
+enum ledColor_t {
+    LED_RED,
+    LED_GREEN,
+    LED_BLUE
+};
 
 // ===================================== Function Prototypes ==========================
 void waitForGo();
 void serialInit(uint32_t baudRate);
 bool checkStopped();
+void setLED(uint8_t ledColor, uint8_t brightness);
 
 #endif // UTILS_H
