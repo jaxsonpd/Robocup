@@ -36,12 +36,17 @@ RobotInfo_t robotInfo = {0};
 void robot_setup() {
 	// Initialise the serial output
 	serialInit(SERIAL_BAUD_RATE);
-  Serial1.begin(9600);
 
 	// Initialise the main drive motors
-	motors_setup();
+    if (!motors_setup()) {
+        Serial.println("Error setting up motors");
+        while(1);
+    }
 
-    sensors_init();
+    if (!sensors_setup()) {
+        Serial.println("Error setting up sensors");
+        while(1);
+    }
 
     delay(1000);
 

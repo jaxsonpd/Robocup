@@ -21,8 +21,6 @@
 #define IRTRI_20_150_RAWMIN 280 // 20-150cm sensor minium raw value (150cm)
 #define IRTRI_20_150_RAWMAX 720 // 20-150cm sensor maximum raw value (20cm)
 
-
-
 // ** IR triangulating sensor values **
 // Number of IR triangulating sensors
 #define IRTRI_NUM 2
@@ -37,6 +35,16 @@
 #define IRTRI_1_PIN A9
 #define IRTRI_1_TYPE IRTRI_20_150
 
+// IR triangulating sensor constants
+#define K_1 104
+#define K_2 88887
+#define K_3 -16
+
+// IR trangulating sensor struct
+typedef struct {
+    uint8_t pin; // the pin the sensor is connected to
+    uint8_t type; // 0: , 1:, 2: 20-150cm
+} irTri_sensor_t;
 
 // ===================================== Function Prototypes ==========================
 

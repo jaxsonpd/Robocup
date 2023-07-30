@@ -17,36 +17,25 @@
 #include "src/ultrasonic.hpp"
 #include "robotInformation.hpp"
 #include "src/circBuffer.hpp"
+#include "src/VL53L0X.h"
 
 #include "src/USConfig.hpp"
-#include "src/IRConfig.hpp"
+#include "src/IRTriConfig.hpp"
 
 #include <stdint.h>
 #include <stdbool.h>
 
 // ===================================== Constants ====================================
+// Heading constants
 #define HEADING_OFFSET 360
 #define MAX_HEADING 180
 #define HEADING_BOUND 2
 
-
+// Buffer sizes for sensor readings
 #define BUFFER_SIZE 8
 
-#define K_1 104
-#define K_2 88887
-#define K_3 -16
-
-
-
-
 // ===================================== Globals ======================================
-// IR trangulating sensor struct
-typedef struct {
-    uint8_t pin; // the pin the sensor is connected to
-    uint8_t type; // 0: , 1:, 2: 20-150cm
-} irTri_sensor_t;
-
-
+// IMU Setup
 // Check I2C device address and correct line below (by default address is 0x29 or 0x28)
 //                                   id, address
 Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
@@ -62,13 +51,20 @@ uint16_t* usDistances = new uint16_t[US_NUM]; // Array of computed distances
 irTri_sensor_t top_IRTriSensor = {IRTRI_0_PIN, IRTRI_0_TYPE};
 irTri_sensor_t bottom_IRTriSensor = {IRTRI_1_PIN, IRTRI_1_TYPE};
 
-
 // Circular buffers for sensors
 circBuffer_t* us0Buffer = new circBuffer_t[BUFFER_SIZE]; // Left US
 circBuffer_t* us1Buffer = new circBuffer_t[BUFFER_SIZE]; // Right US
 circBuffer_t* ir0Buffer = new circBuffer_t[BUFFER_SIZE]; // Top IR
 circBuffer_t* ir1Buffer = new circBuffer_t[BUFFER_SIZE]; // Bottom IR
 circBuffer_t* headingBuffer = new circBuffer_t[BUFFER_SIZE];
+
+// create IR TOF sensors
+#ifdef IRTOF_0
+    VL53L0X irTOF0;
+#endif // IRTOF_0
+#ifdef IRTOF_1
+    VL53L0X irTOF1;
+#endif // IRTOF_1
 
 
 // ===================================== Function Definitions =========================
@@ -78,6 +74,8 @@ circBuffer_t* headingBuffer = new circBuffer_t[BUFFER_SIZE];
  * @return success (0) or failure (1)
  */
 bool sensors_init(void) {
+    wire.begin();
+
     // Initialise ultrasonic sensor counters
     usCounterInit(); 
 
@@ -99,6 +97,30 @@ bool sensors_init(void) {
     #ifdef US_3
         usAddToArray(US_TRIG_3, US_ECHO_3, 3);
     #endif
+
+    // Initailise the IR TOF sensors
+    #ifdef IRTOF_0
+        irTOF0.setTimeout(500);
+        if (!irTOF0.init()) {
+            Serial.println("Failed to detect and initialise IR TOF sensor 0!");
+            return 1;
+        }
+        irTOF0.setAddress(IRTOF_0_ADDR);
+
+        // Start continuous back-to-back mode (take readings as fast as possible).
+        irTOF0.startContinuous();
+    #endif // IRTOF_0
+    #ifdef IRTOF_1
+        irTOF1.setTimeout(500);
+        if (!irTOF1.init()) {
+            Serial.println("Failed to detect and initialise IR TOF sensor 1!");
+            return 1;
+        }
+        irTOF1.setAddress(IRTOF_1_ADDR);
+
+        // Start continuous back-to-back mode (take readings as fast as possible).
+        irTOF1.startContinuous();
+    #endif // IRTOF_1
 
     // Initialise the buffers
     circBuffer_init(us0Buffer, BUFFER_SIZE);
@@ -179,6 +201,19 @@ static int16_t getHeading(void) {
 }
 
 /** 
+ * @brief Get the current distance messured by an IR TOF sensor in continuous mode
+ * @param sensor The sensor to read from
+ * 
+ * @return the distance in mm
+ */
+static uint32_t getIRTOFDistanceContinuous(VL53L0X sensor) {
+    uint32_t distance = sensor.readRangeContinuousMillimeters();
+    if (sensor.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
+    return distance;
+}
+
+
+/** 
  * @brief Get the filtered heading of the robot
  * 
  * @return the filtered heading in degrees
@@ -254,8 +289,8 @@ void sensors_update(void) {
     
     circBuffer_write(us0Buffer, usDistances[0]);
     circBuffer_write(us1Buffer, usDistances[1]);
-    circBuffer_write(ir0Buffer, getIRTriDistance(top_IRTriSensor));
-    circBuffer_write(ir1Buffer, getIRTriDistance(bottom_IRTriSensor));
+    circBuffer_write(ir0Buffer, getIRTOFDistanceContinuous(irTOF0));
+    circBuffer_write(ir1Buffer, getIRTOFDistanceContinuous(irTOF1));
     circBuffer_write(headingBuffer, getHeading());
 }
 
