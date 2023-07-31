@@ -8,23 +8,19 @@
 
 // ===================================== Includes =====================================
 #include <Arduino.h>
-#include <Servo.h>
 
 #include "motors.hpp"
 #include "sensors.hpp"
 #include "utils.hpp"
 #include "robotInformation.hpp"
 #include "returnToBase.hpp"
-<<<<<<< main/main.ino
-
-=======
->>>>>>> main/main.ino
+#include "weightCollection.hpp"
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
 
 // ===================================== Constants ====================================
-#define SERIAL_BAUD_RATE 9600
+#define SERIAL_BAUD_RATE 57600
 
 
 // ===================================== Globals ======================================
@@ -41,14 +37,13 @@ void robot_setup() {
 	serialInit(SERIAL_BAUD_RATE);
 
 	// Initialise the main drive motors
-    if (!motors_setup()) {
+    if (motors_setup()) {
         Serial.println("Error setting up motors");
-        while(1);
+
     }
 
-    if (!sensors_setup()) {
+    if (sensors_init()) {
         Serial.println("Error setting up sensors");
-        while(1);
     }
 
     delay(1000);
@@ -78,7 +73,7 @@ void loop() {
             sensors_update();
             sensorUpdateTimer = 0;
         }
-
+        
         // Update robot information
         if (robotInfoUpdateTimer > 100) {
             motors_updateInfo(&robotInfo);
@@ -86,31 +81,24 @@ void loop() {
             printRobotInfo(&robotInfo);
             robotInfoUpdateTimer = 0;
         }
+
         
         // perform actions
         if (PIDTimer > 200) {
-            homeReturn(&robotInfo);
-
-<<<<<<< main/main.ino
+            findWeights(&robotInfo);
             PIDTimer = 0;
         }
 
-        if (slowUpdateTimer > 1000) {
-            if (offSetpoint) {
-                setLED(LED_RED, 1);
-            } else {
-                setLED(LED_GREEN, 1);
-            }
-=======
-        if (loopNum == 80) {
-            homeReturn(&robotInfo);
-
->>>>>>> main/main.ino
-        }
+        // if (slowUpdateTimer > 1000) {
+        //     if (offSetpoint) {
+        //         setLED(LED_RED, 1);
+        //     } else {
+        //         setLED(LED_GREEN, 1);
+        //     }
+        // }
 
         // Check if the robot should keep running
         running = checkStopped();
-
 	}
 }
 

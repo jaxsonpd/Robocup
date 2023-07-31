@@ -47,5 +47,4 @@ void printRobotInfo(RobotInfo_t* robotInfo) {
         robotInfo->atHeading);
 
     Serial.print(buffer);
-    Serial1.write(buffer);
 }  

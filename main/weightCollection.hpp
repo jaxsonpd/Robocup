@@ -14,11 +14,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include"robotInformation.hpp"
+
 
 // ===================================== Types/Constants ==============================
 
 
 // ===================================== Function Prototypes ==========================
-
+void findWeights(RobotInfo_t *robotInfo);
 
 #endif // WEIGHTCOLLECTION_H

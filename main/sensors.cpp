@@ -12,6 +12,7 @@
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
+#include <SparkFunSX1509.h>
 
 #include "sensors.hpp"
 #include "src/ultrasonic.hpp"
@@ -21,6 +22,7 @@
 
 #include "src/USConfig.hpp"
 #include "src/IRTriConfig.hpp"
+#include "src/IRTOFConfig.hpp"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -33,15 +35,17 @@
 
 // Buffer sizes for sensor readings
 #define BUFFER_SIZE 8
+#define IRTOF_BUFFER_SIZE 2
 
+#define SX1509_ADDRESS 0x3F // TOF IO expander address
 // ===================================== Globals ======================================
 // IMU Setup
 // Check I2C device address and correct line below (by default address is 0x29 or 0x28)
 //                                   id, address
 Adafruit_BNO055 bno = Adafruit_BNO055(55, 0x28);
 
-// Number of ultrasonic sensors for external use
-uint8_t numUS = US_NUM;
+// Create an SX1509 object to be used throughout
+SX1509 io; 
 
 // Array of ultrasonic sensors
 extern UltrasonicSensor_t usArray[US_NUM]; 
@@ -54,17 +58,13 @@ irTri_sensor_t bottom_IRTriSensor = {IRTRI_1_PIN, IRTRI_1_TYPE};
 // Circular buffers for sensors
 circBuffer_t* us0Buffer = new circBuffer_t[BUFFER_SIZE]; // Left US
 circBuffer_t* us1Buffer = new circBuffer_t[BUFFER_SIZE]; // Right US
-circBuffer_t* ir0Buffer = new circBuffer_t[BUFFER_SIZE]; // Top IR
-circBuffer_t* ir1Buffer = new circBuffer_t[BUFFER_SIZE]; // Bottom IR
+circBuffer_t* ir0Buffer = new circBuffer_t[IRTOF_BUFFER_SIZE]; // Top IR
+circBuffer_t* ir1Buffer = new circBuffer_t[IRTOF_BUFFER_SIZE]; // Bottom IR
 circBuffer_t* headingBuffer = new circBuffer_t[BUFFER_SIZE];
 
-// create IR TOF sensors
-#ifdef IRTOF_0
-    VL53L0X irTOF0;
-#endif // IRTOF_0
-#ifdef IRTOF_1
-    VL53L0X irTOF1;
-#endif // IRTOF_1
+// create IR TOF sensor objects
+VL53L0X irTOF0;
+VL53L0X irTOF1;
 
 
 // ===================================== Function Definitions =========================
@@ -74,7 +74,11 @@ circBuffer_t* headingBuffer = new circBuffer_t[BUFFER_SIZE];
  * @return success (0) or failure (1)
  */
 bool sensors_init(void) {
-    wire.begin();
+    Wire.begin();
+    Wire.setClock(400000); // use 400 kHz I2C
+
+    // Initialise the IO expander
+    io.begin(SX1509_ADDRESS);
 
     // Initialise ultrasonic sensor counters
     usCounterInit(); 
@@ -99,8 +103,21 @@ bool sensors_init(void) {
     #endif
 
     // Initailise the IR TOF sensors
+    // Set all XSHUT pins low to reset/disable
+    io.pinMode(IRTOF_0_XSHUT_PIN, OUTPUT);
+    io.pinMode(IRTOF_1_XSHUT_PIN, OUTPUT);
+    io.digitalWrite(IRTOF_0_XSHUT_PIN, LOW);
+    io.digitalWrite(IRTOF_1_XSHUT_PIN, LOW);
+    delay(1000);
+
     #ifdef IRTOF_0
+        // Enable the sensor
+        io.digitalWrite(IRTOF_0_XSHUT_PIN, HIGH);
+        delay(10);
         irTOF0.setTimeout(500);
+
+        Serial.println("Trying to connect");
+
         if (!irTOF0.init()) {
             Serial.println("Failed to detect and initialise IR TOF sensor 0!");
             return 1;
@@ -110,7 +127,10 @@ bool sensors_init(void) {
         // Start continuous back-to-back mode (take readings as fast as possible).
         irTOF0.startContinuous();
     #endif // IRTOF_0
+
     #ifdef IRTOF_1
+        io.digitalWrite(IRTOF_1_XSHUT_PIN, HIGH);
+        delay(10);
         irTOF1.setTimeout(500);
         if (!irTOF1.init()) {
             Serial.println("Failed to detect and initialise IR TOF sensor 1!");
@@ -125,8 +145,8 @@ bool sensors_init(void) {
     // Initialise the buffers
     circBuffer_init(us0Buffer, BUFFER_SIZE);
     circBuffer_init(us1Buffer, BUFFER_SIZE);
-    circBuffer_init(ir0Buffer, BUFFER_SIZE);
-    circBuffer_init(ir1Buffer, BUFFER_SIZE);
+    circBuffer_init(ir0Buffer, IRTOF_BUFFER_SIZE);
+    circBuffer_init(ir1Buffer, IRTOF_BUFFER_SIZE);
     circBuffer_init(headingBuffer, BUFFER_SIZE);
 
     return 0;
@@ -206,7 +226,7 @@ static int16_t getHeading(void) {
  * 
  * @return the distance in mm
  */
-static uint32_t getIRTOFDistanceContinuous(VL53L0X sensor) {
+static uint32_t getVL53LOXDistance(VL53L0X sensor) {
     uint32_t distance = sensor.readRangeContinuousMillimeters();
     if (sensor.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
     return distance;
@@ -277,7 +297,7 @@ void sensors_updateInfo(RobotInfo_t* robotInfo) {
 }
 
 /**
- * @breif update the sensors to recive new readings
+ * @brief update the sensors to recive new readings
  * 
  */
 void sensors_update(void) {
@@ -287,10 +307,11 @@ void sensors_update(void) {
     // Start new ping cycle
     pingUS();
     
+    // Update Buffers
     circBuffer_write(us0Buffer, usDistances[0]);
     circBuffer_write(us1Buffer, usDistances[1]);
-    circBuffer_write(ir0Buffer, getIRTOFDistanceContinuous(irTOF0));
-    circBuffer_write(ir1Buffer, getIRTOFDistanceContinuous(irTOF1));
+    circBuffer_write(ir0Buffer, getVL53LOXDistance(irTOF0));
+    circBuffer_write(ir1Buffer, getVL53LOXDistance(irTOF1));
     circBuffer_write(headingBuffer, getHeading());
 }
 
