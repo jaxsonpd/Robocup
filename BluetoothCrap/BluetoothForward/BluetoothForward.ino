@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include <Arduino.h>
 #include <SPI.h>
@@ -20,7 +21,7 @@
 #include "BluefruitConfig.h"
 // ===================================== Types/Constants ==============================
 #define FACTORYRESET_ENABLE 1 // Factory reset feature is enabled if set to 1
-#define VERBOSE_MODE true // If set to true, debug information will be printed to the serial port
+#define VERBOSE_MODE false // If set to true, debug information will be printed to the serial port
 
 #define SERIAL_BAUD_RATE 115200
 #define SERIAL1_BAUD_RATE 115200
@@ -47,7 +48,7 @@ bool bluetooth_init(bool verboseMode, bool factoryReset) {
     // Initialize the module
     Serial.println(F("Initializing the Bluefruit LE module:"));
 
-    if (!ble.begin(verboseMode)) {
+    if (!ble.begin(VERBOSE_MODE)) {
         Serial.println(F("Couldn't find Bluefruit, make sure it's in Command mode & check wiring?"));
         return false;
     }
@@ -89,6 +90,8 @@ bool serial_init(uint32_t serialBaudRate, uint32_t serial1BaudRate) {
     Serial.begin(serialBaudRate);
     Serial1.begin(serial1BaudRate);
 
+    delay(1000);
+
     // Print a welcome message
     Serial.print(F("Serial port initialized at: "));
     Serial.print(serialBaudRate);
@@ -109,18 +112,23 @@ void setup(void) {
         while (1);
     }
 
+    Serial.println(" ***************************************** ");
+
     // Initialize the Bluefruit LE module
     if(!bluetooth_init(VERBOSE_MODE, FACTORYRESET_ENABLE)) {
         Serial.println(F("Bluetooth initialization failed!"));
         while (1);
     }
 
+
     Serial.println(F("Setup complete!"));
 
-      /* Wait for connection */
+    /* Wait for connection */
     while (!ble.isConnected()) {
         delay(500);
     }
+
+    Serial.println(" ***************************************** ");
 }
 
 void loop(void) {
@@ -152,9 +160,15 @@ void loop(void) {
     }
 
     #ifdef SIMULATE // Simulate data from the Serial1 port
-        ble.print("Current time: ");
-        ble.print(millis());
-        ble.println(" ms\n");
-        delay(1000);
+        char buffer[BUFSIZE];
+
+        sprintf(buffer, "Current time: %lu ms\n", millis());
+
+        Serial.print("Sending -> ");
+        Serial.print(buffer);
+
+        ble.print(buffer);
+
+        delay(2000);
     #endif // SIMULATE
 }
