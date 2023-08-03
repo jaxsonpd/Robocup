@@ -23,5 +23,6 @@
 bool sensors_init(void);
 void sensors_updateInfo(RobotInfo_t* robotInfo);
 void sensors_update(void);
+void sensor_deInit(void);
 
 #endif // SENSORS_H

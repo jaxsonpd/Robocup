@@ -24,7 +24,7 @@
 #define MOTOR_SPEED_MAX 100
 #define MOTOR_SPEED_MIN -100
 
-#define P_CONTROL_GAIN 100 //  /100
+#define P_CONTROL_GAIN 50 //  /100
 #define I_CONTROL_GAIN 0 //  /100
 #define D_CONTROL_GAIN 0 //  /100
 #define GAIN_SCALING 100

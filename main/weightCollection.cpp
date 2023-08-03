@@ -24,8 +24,8 @@ enum states {
     MOVE_TO_WEIGHT,
 };
 
-#define ROTATION_OFFSET 30
-#define MOVE_SPEED 30
+#define ROTATION_OFFSET 40
+#define MOVE_SPEED 40
 #define MOVE_TIME 1000
 
 #define WEIGHT_DIFFERENCE_THRESHOLD 100
@@ -44,30 +44,38 @@ void findWeights(RobotInfo_t *robotInfo) {
 
     static int16_t weightHeading = 0;
     static int16_t startHeading = 0;
+
+    static uint16_t weightDistance = 90000;
+
     static int16_t mostOpenHeading = 0;
     static int16_t mostOpenDistance = 0;
 
     switch(state) {
         case ROTATING: // Rotate a 360 to look for weights
             if (firstRun) {
-                startHeading = robotInfo->IMU_Heading;
+                startHeading = robotInfo->IMU_Heading - 5;
                 firstRun = false;
             }
             
             // Check for weight
-            if (abs(robotInfo->IRTop_Distance - robotInfo->IRBottom_Distance) > WEIGHT_DIFFERENCE_THRESHOLD) {
+            if ((robotInfo->IRTop_Distance > robotInfo->IRBottom_Distance) & (abs(robotInfo->IRTop_Distance - robotInfo->IRBottom_Distance) > WEIGHT_DIFFERENCE_THRESHOLD)) {
                 // Found a weight
-                weightHeading = robotInfo->IMU_Heading;
-                state = MOVE_TO_WEIGHT; 
-                firstRun = true;
-            } else if (abs(robotInfo->IMU_Heading - startHeading) > HEADING_THRESHOLD) { // Check if we have rotated 360
+                if (weightDistance + 10 < robotInfo->IRBottom_Distance) { // Actually looking at weight
+                  weightHeading = robotInfo->IMU_Heading;
+                  state = MOVE_TO_WEIGHT; 
+                  firstRun = true;
+                } else { // Keep going
+                  weightDistance = robotInfo->IRBottom_Distance;
+                }
+
+            } else if (abs(robotInfo->IMU_Heading - startHeading) < HEADING_THRESHOLD) { // Check if we have rotated 360
                 // We have rotated 360
                 state = MOVE_TO_OPEN;
                 firstRun = true;
-            } else {
-                // Continue rotating
-                motors_followHeading(robotInfo, robotInfo->IMU_Heading + ROTATION_OFFSET, 0);
-            }
+            } 
+
+            motors_followHeading(robotInfo, robotInfo->IMU_Heading + ROTATION_OFFSET, 0);
+  
 
             // Update the most open area heading
             if (robotInfo->IRTop_Distance > mostOpenDistance) {
@@ -98,15 +106,16 @@ void findWeights(RobotInfo_t *robotInfo) {
                 atWeight = true;
             } 
 
-            if (atWeight & robotInfo->IRBottom_Distance > WEIGHT_CLOSE_DISTANCE) {
+            if (atWeight & (robotInfo->IRBottom_Distance > WEIGHT_CLOSE_DISTANCE)) {
                 // Weight as been collected/removed so move on
-                firstRun = True;
+                firstRun = true;
                 state = ROTATING;
             } else {
                 motors_followHeading(robotInfo, weightHeading, MOVE_SPEED);
             }
             break;
     }
+    Serial.print(state);
 }
 
 

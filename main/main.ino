@@ -15,6 +15,7 @@
 #include "robotInformation.hpp"
 #include "returnToBase.hpp"
 #include "weightCollection.hpp"
+
 #include <stdint.h>
 #include <stdbool.h>
 #include <string.h>
@@ -35,6 +36,7 @@ RobotInfo_t robotInfo = {0};
 void robot_setup() {
 	// Initialise the serial output
 	serialInit(SERIAL_BAUD_RATE);
+  Serial1.begin(9600);
 
 	// Initialise the main drive motors
     if (motors_setup()) {
@@ -60,13 +62,12 @@ void robot_setup() {
 void setup() {} // Keep the Arduino IDE happy
 
 void loop() {
+	  robot_setup();
+
     elapsedMillis sensorUpdateTimer = 0;
     elapsedMillis robotInfoUpdateTimer = 0;
     elapsedMillis PIDTimer = 0;
     elapsedMillis slowUpdateTimer = 0;
-    bool offSetpoint = 0;
-
-	robot_setup();
 
 	while(running) {
         if (sensorUpdateTimer > 5) {
@@ -89,17 +90,19 @@ void loop() {
             PIDTimer = 0;
         }
 
-        // if (slowUpdateTimer > 1000) {
-        //     if (offSetpoint) {
-        //         setLED(LED_RED, 1);
-        //     } else {
-        //         setLED(LED_GREEN, 1);
-        //     }
-        // }
+        if (slowUpdateTimer > 500) {
+            char buffer[150];
+            sprintf(buffer, "IR T: %4d, B: %4d\n", robotInfo.IRTop_Distance, robotInfo.IRBottom_Distance);
+
+            Serial1.write(buffer);
+            slowUpdateTimer = 0;
+        }
 
         // Check if the robot should keep running
         running = checkStopped();
 	}
+
+  sensor_deInit();
 }
 
 

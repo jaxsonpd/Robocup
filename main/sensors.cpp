@@ -38,6 +38,9 @@
 #define IRTOF_BUFFER_SIZE 2
 
 #define SX1509_ADDRESS 0x3F // TOF IO expander address
+
+#define ADDRESS_DEFAULT 0b0101001 // Defult IR TOF Address
+
 // ===================================== Globals ======================================
 // IMU Setup
 // Check I2C device address and correct line below (by default address is 0x29 or 0x28)
@@ -108,12 +111,12 @@ bool sensors_init(void) {
     io.pinMode(IRTOF_1_XSHUT_PIN, OUTPUT);
     io.digitalWrite(IRTOF_0_XSHUT_PIN, LOW);
     io.digitalWrite(IRTOF_1_XSHUT_PIN, LOW);
-    delay(1000);
+    delay(100);
 
     #ifdef IRTOF_0
         // Enable the sensor
         io.digitalWrite(IRTOF_0_XSHUT_PIN, HIGH);
-        delay(10);
+        delay(100);
         irTOF0.setTimeout(500);
 
         Serial.println("Trying to connect");
@@ -130,7 +133,7 @@ bool sensors_init(void) {
 
     #ifdef IRTOF_1
         io.digitalWrite(IRTOF_1_XSHUT_PIN, HIGH);
-        delay(10);
+        delay(100);
         irTOF1.setTimeout(500);
         if (!irTOF1.init()) {
             Serial.println("Failed to detect and initialise IR TOF sensor 1!");
@@ -150,6 +153,22 @@ bool sensors_init(void) {
     circBuffer_init(headingBuffer, BUFFER_SIZE);
 
     return 0;
+}
+
+
+/*
+ * @brief de initialize the sensor componetes
+ *
+ */
+void sensor_deInit(void) {
+    irTOF0.setAddress(ADDRESS_DEFAULT);
+    delay(100);
+    
+    io.digitalWrite(IRTOF_0_XSHUT_PIN, LOW);  
+    irTOF1.setAddress(ADDRESS_DEFAULT);
+
+    delay(100);
+    io.digitalWrite(IRTOF_1_XSHUT_PIN, LOW); 
 }
 
 /** 
