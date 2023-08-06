@@ -29,7 +29,7 @@
 #define BUFSIZE 128
 
 // Uncomment to simulate data from the Serial1 port
-#define SIMULATE
+// #define SIMULATE
 
 // ===================================== Globals ======================================
 // Create a bluefruit object using hardware SPI (SCK/MOSI/MISO) pin definitions in BluefruitConfig.h
@@ -139,14 +139,14 @@ void loop(void) {
         size_t n;
 
         // Read user input
-        Serial1.readBytesUntil('\n', inputs, BUFSIZE);
+        n = Serial1.readBytesUntil('\n', inputs, BUFSIZE);
         inputs[n] = 0;
 
         Serial.print(F("Sending: "));
         Serial.println(inputs);
 
         // Send user input to the Bluefruit LE module
-        ble.print(inputs);
+        ble.println(inputs);
     }
 
     // Forward data from the Bluefruit LE module to the serial port
@@ -159,16 +159,5 @@ void loop(void) {
         Serial1.print(c);
     }
 
-    #ifdef SIMULATE // Simulate data from the Serial1 port
-        char buffer[BUFSIZE];
 
-        sprintf(buffer, "Current time: %lu ms\n", millis());
-
-        Serial.print("Sending -> ");
-        Serial.print(buffer);
-
-        ble.print(buffer);
-
-        delay(2000);
-    #endif // SIMULATE
 }

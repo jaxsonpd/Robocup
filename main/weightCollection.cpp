@@ -110,12 +110,13 @@ void findWeights(RobotInfo_t *robotInfo) {
                 // Weight as been collected/removed so move on
                 firstRun = true;
                 state = ROTATING;
+                atWeight = false;
             } else {
                 motors_followHeading(robotInfo, weightHeading, MOVE_SPEED);
             }
             break;
     }
-    Serial.print(state);
+    robotInfo->mode = state;
 }
 
 

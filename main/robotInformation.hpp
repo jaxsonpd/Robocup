@@ -36,6 +36,9 @@ typedef struct {
     int16_t IMU_Heading; // IMU heading in degrees
     int16_t targetHeading; // Target heading in degrees
     bool atHeading;
+
+    // General Info
+    uint8_t mode; // Current mode the robot is in
 } RobotInfo_t;
 
 

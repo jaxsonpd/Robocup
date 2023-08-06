@@ -35,7 +35,7 @@
 
 // Buffer sizes for sensor readings
 #define BUFFER_SIZE 8
-#define IRTOF_BUFFER_SIZE 2
+#define IRTOF_BUFFER_SIZE 1
 
 #define SX1509_ADDRESS 0x3F // TOF IO expander address
 
@@ -118,8 +118,6 @@ bool sensors_init(void) {
         io.digitalWrite(IRTOF_0_XSHUT_PIN, HIGH);
         delay(100);
         irTOF0.setTimeout(500);
-
-        Serial.println("Trying to connect");
 
         if (!irTOF0.init()) {
             Serial.println("Failed to detect and initialise IR TOF sensor 0!");
@@ -248,6 +246,11 @@ static int16_t getHeading(void) {
 static uint32_t getVL53LOXDistance(VL53L0X sensor) {
     uint32_t distance = sensor.readRangeContinuousMillimeters();
     if (sensor.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
+
+    if (distance > 1200) { // Out of range
+
+    }
+
     return distance;
 }
 
