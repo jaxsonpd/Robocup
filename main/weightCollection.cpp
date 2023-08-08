@@ -24,8 +24,8 @@ enum states {
     MOVE_TO_WEIGHT,
 };
 
-#define ROTATION_OFFSET 40
-#define MOVE_SPEED 40
+#define ROTATION_OFFSET 30
+#define MOVE_SPEED 30
 #define MOVE_TIME 1000
 
 #define WEIGHT_DIFFERENCE_THRESHOLD 100

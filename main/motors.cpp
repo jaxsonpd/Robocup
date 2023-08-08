@@ -24,8 +24,8 @@
 #define MOTOR_SPEED_MAX 100
 #define MOTOR_SPEED_MIN -100
 
-#define P_CONTROL_GAIN 75 //  /100
-#define I_CONTROL_GAIN 0 //  /100
+#define P_CONTROL_GAIN 70 //  /100
+#define I_CONTROL_GAIN 10 //  /100
 #define D_CONTROL_GAIN 0 //  /100
 #define GAIN_SCALING 100
 
@@ -214,7 +214,7 @@ bool motors_formShape(RobotInfo_t *robotInfo, uint32_t sideLenght, int16_t rotat
 
     switch (state) {
         case 0: // Move forward
-            atSetpoint = motors_followHeading(robotInfo, targetHeading, 40);
+            atSetpoint = motors_followHeading(robotInfo, targetHeading, 30);
             if (timeAtState > sideLenght) {
                 state = 1;
                 timeAtState = 0;
