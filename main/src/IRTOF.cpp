@@ -23,21 +23,7 @@
 // ===================================== Globals ======================================
 
 // ===================================== Function Definitions =========================
-/**
- * @brief The IRTOF class used to interface with the VL53L0x Time of Flight sensor.
- * 
- */
-class IRTOF {
-    public:
 
-    private:
-        circBuffer_t* distanceBuffer;
-        uint8_t bufferSize;
-        uint8_t XSHUT;
-        uint8_t address;
-        SX1509* externalIO;
-        VL53L0X sensor;
-}:
 
 /**
  * @brief Initialise a new IRTOF object
@@ -106,6 +92,6 @@ void IRTOF::update(void) {
  * 
  * @return The latest reading from the buffer
  */
-int32_t IRTOF::getLatest(void) {
+int32_t IRTOF::getDistance(void) {
     return circBuffer_average(distanceBuffer);
 }
