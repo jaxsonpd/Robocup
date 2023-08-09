@@ -77,7 +77,6 @@ void loop() {
         
         // Update robot information
         if (robotInfoUpdateTimer > 100) {
-            motors_updateInfo(&robotInfo);
             sensors_updateInfo(&robotInfo);
             printRobotInfo(&robotInfo);
             robotInfoUpdateTimer = 0;
