@@ -10,7 +10,6 @@
 #include <arduino.h>
 #include <stdint.h>
 #include <stdbool.h>
-#include <SparkFunSX1509.h>
 
 #include "VL53L0X.h"
 
@@ -31,11 +30,10 @@
  * @param address The address of the VL53L0x sensor
  * @param XSHUT The pin connected to the XSHUT pin of the VL53L0x sensor
  * @param bufferSize The size of the buffer to store the sensor readings in
- * @param externalIO The SX1509 object used to interface with the XSHUT pin
  * 
  * @return 1 if the sensor was successfully initialised, 0 otherwise
  */
-bool IRTOF::init(uint8_t address, uint8_t XSHUT, uint8_t bufferSize, SX1509* externalIO) {
+bool IRTOF::init(uint8_t address, uint8_t XSHUT, uint8_t bufferSize) {
     // Assign the parameters to the class variables
     address = address;
     XSHUT = XSHUT;
@@ -44,15 +42,6 @@ bool IRTOF::init(uint8_t address, uint8_t XSHUT, uint8_t bufferSize, SX1509* ext
 
     // Initialise the buffer
     distanceBuffer = new circBuffer_t[bufferSize];
-
-    // Initialise pins
-    externalIO->pinMode(XSHUT, OUTPUT);
-    externalIO->digitalWrite(XSHUT, LOW); // Reset the sensor
-    delay(100);
-
-    // Initialise the sensor
-    externalIO->digitalWrite(XSHUT, HIGH); // Set the sensor to active mode
-    delay(100);
 
     sensor.setTimeout(500);
     if (!sensor.init()) {
@@ -75,8 +64,6 @@ bool IRTOF::init(uint8_t address, uint8_t XSHUT, uint8_t bufferSize, SX1509* ext
 void IRTOF::deInit(void) {
     sensor.setAddress(ADDRESS_DEFAULT);
     delay(100);
-    
-    externalIO->digitalWrite(XSHUT, LOW);  
 }
 
 /**

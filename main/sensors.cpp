@@ -18,7 +18,7 @@
 #include "src/ultrasonic.hpp"
 #include "robotInformation.hpp"
 #include "src/circBuffer.hpp"
-#include "src/VL53L0X.h"
+#include "src/IRTOF.hpp"
 
 #include "src/USConfig.hpp"
 #include "src/IRTriConfig.hpp"
@@ -55,19 +55,17 @@ extern UltrasonicSensor_t usArray[US_NUM];
 uint16_t* usDistances = new uint16_t[US_NUM]; // Array of computed distances
 
 // IR triangulating sensor structs
-irTri_sensor_t top_IRTriSensor = {IRTRI_0_PIN, IRTRI_0_TYPE};
-irTri_sensor_t bottom_IRTriSensor = {IRTRI_1_PIN, IRTRI_1_TYPE};
+// irTri_sensor_t top_IRTriSensor = {IRTRI_0_PIN, IRTRI_0_TYPE};
+// irTri_sensor_t bottom_IRTriSensor = {IRTRI_1_PIN, IRTRI_1_TYPE};
 
 // Circular buffers for sensors
 circBuffer_t* us0Buffer = new circBuffer_t[BUFFER_SIZE]; // Left US
 circBuffer_t* us1Buffer = new circBuffer_t[BUFFER_SIZE]; // Right US
-circBuffer_t* ir0Buffer = new circBuffer_t[IRTOF_BUFFER_SIZE]; // Top IR
-circBuffer_t* ir1Buffer = new circBuffer_t[IRTOF_BUFFER_SIZE]; // Bottom IR
 circBuffer_t* headingBuffer = new circBuffer_t[BUFFER_SIZE];
 
 // create IR TOF sensor objects
-VL53L0X irTOF0;
-VL53L0X irTOF1;
+IRTOF irTOF0;
+IRTOF irTOF1;
 
 
 // ===================================== Function Definitions =========================
@@ -106,42 +104,22 @@ bool sensors_init(void) {
     #endif
 
     // Initailise the IR TOF sensors
-    // Set all XSHUT pins low to reset/disable
+    // Reset the sensors
     io.pinMode(IRTOF_0_XSHUT_PIN, OUTPUT);
     io.pinMode(IRTOF_1_XSHUT_PIN, OUTPUT);
     io.digitalWrite(IRTOF_0_XSHUT_PIN, LOW);
     io.digitalWrite(IRTOF_1_XSHUT_PIN, LOW);
     delay(100);
 
-    #ifdef IRTOF_0
-        // Enable the sensor
-        io.digitalWrite(IRTOF_0_XSHUT_PIN, HIGH);
-        delay(100);
-        irTOF0.setTimeout(500);
+    // Initialise sensor 1
+    io.digitalWrite(IRTOF_0_XSHUT_PIN, HIGH);
+    delay(100);
+    irTOF0.init(IRTOF_0_ADDR, IRTOF_0_XSHUT_PIN, IRTOF_BUFFER_SIZE);
 
-        if (!irTOF0.init()) {
-            Serial.println("Failed to detect and initialise IR TOF sensor 0!");
-            return 1;
-        }
-        irTOF0.setAddress(IRTOF_0_ADDR);
-
-        // Start continuous back-to-back mode (take readings as fast as possible).
-        irTOF0.startContinuous();
-    #endif // IRTOF_0
-
-    #ifdef IRTOF_1
-        io.digitalWrite(IRTOF_1_XSHUT_PIN, HIGH);
-        delay(100);
-        irTOF1.setTimeout(500);
-        if (!irTOF1.init()) {
-            Serial.println("Failed to detect and initialise IR TOF sensor 1!");
-            return 1;
-        }
-        irTOF1.setAddress(IRTOF_1_ADDR);
-
-        // Start continuous back-to-back mode (take readings as fast as possible).
-        irTOF1.startContinuous();
-    #endif // IRTOF_1
+    // Initialise sensor 2
+    io.digitalWrite(IRTOF_1_XSHUT_PIN, HIGH);
+    delay(100);
+    irTOF1.init(IRTOF_1_ADDR, IRTOF_1_XSHUT_PIN, IRTOF_BUFFER_SIZE);
 
     // Initialise the buffers
     circBuffer_init(us0Buffer, BUFFER_SIZE);
@@ -159,13 +137,10 @@ bool sensors_init(void) {
  *
  */
 void sensor_deInit(void) {
-    irTOF0.setAddress(ADDRESS_DEFAULT);
-    delay(100);
-    
+    irTOF0.deInit();    
     io.digitalWrite(IRTOF_0_XSHUT_PIN, LOW);  
-    irTOF1.setAddress(ADDRESS_DEFAULT);
-
-    delay(100);
+    
+    irTOF1.deInit();
     io.digitalWrite(IRTOF_1_XSHUT_PIN, LOW); 
 }
 
@@ -237,23 +212,6 @@ static int16_t getHeading(void) {
     return heading;
 }
 
-/** 
- * @brief Get the current distance messured by an IR TOF sensor in continuous mode
- * @param sensor The sensor to read from
- * 
- * @return the distance in mm
- */
-static uint32_t getVL53LOXDistance(VL53L0X sensor) {
-    uint32_t distance = sensor.readRangeContinuousMillimeters();
-    if (sensor.timeoutOccurred()) { Serial.print(" TIMEOUT"); }
-
-    if (distance > 1200) { // Out of range
-
-    }
-
-    return distance;
-}
-
 
 /** 
  * @brief Get the filtered heading of the robot
@@ -286,26 +244,6 @@ static int32_t getFilteredRightUS(void) {
 
 
 /** 
- * @brief get the filtered distance from the top IR sensor
- * 
- * @return the filtered distance in mm
- */
-static int32_t getFilteredTopIR(void) {
-    return circBuffer_average(ir0Buffer);
-}
-
-
-/** 
- * @brief get the filtered distance from the bottom IR sensor
- * 
- * @return the filtered distance in mm
- */
-static int32_t getFilteredBottomIR(void) {
-    return circBuffer_average(ir1Buffer);
-}
-
-
-/** 
  * @brief Update the robot info struct with the sensor data
  * @param robotInfo The robot info struct to update
  * 
@@ -314,8 +252,8 @@ void sensors_updateInfo(RobotInfo_t* robotInfo) {
     robotInfo->IMU_Heading = getFilteredHeading();
     robotInfo->USLeft_Distance = getFilteredLeftUS();
     robotInfo->USRight_Distance= getFilteredRightUS();
-    robotInfo->IRTop_Distance = getFilteredTopIR();
-    robotInfo->IRBottom_Distance = getFilteredBottomIR();
+    robotInfo->IRTop_Distance = irTOF0.getDistance();
+    robotInfo->IRBottom_Distance = irTOF1.getDistance();
 }
 
 /**
@@ -332,9 +270,11 @@ void sensors_update(void) {
     // Update Buffers
     circBuffer_write(us0Buffer, usDistances[0]);
     circBuffer_write(us1Buffer, usDistances[1]);
-    circBuffer_write(ir0Buffer, getVL53LOXDistance(irTOF0));
-    circBuffer_write(ir1Buffer, getVL53LOXDistance(irTOF1));
     circBuffer_write(headingBuffer, getHeading());
+
+    // Update IR TOF sensors
+    irTOF0.update();
+    irTOF1.update();
 }
 
     

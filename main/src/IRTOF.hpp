@@ -13,7 +13,6 @@
 // ===================================== Includes =====================================
 #include <stdint.h>
 #include <stdbool.h>
-#include <SparkFunSX1509.h>
 #include "VL53L0X.h"
 #include "circBuffer.hpp"
 
@@ -25,7 +24,7 @@
  */
 class IRTOF {
     public:
-        bool init(uint8_t address, uint8_t XSHUT, uint8_t bufferSize, SX1509* externalIO);
+        bool init(uint8_t address, uint8_t XSHUT, uint8_t bufferSize);
         void deInit(void);
         void update(void);
         int32_t getDistance(void);
@@ -34,7 +33,6 @@ class IRTOF {
         uint8_t bufferSize;
         uint8_t XSHUT;
         uint8_t address;
-        SX1509* externalIO;
         VL53L0X sensor;
 };
 
