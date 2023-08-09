@@ -96,7 +96,6 @@ bool motors_setSpeed(uint8_t selectedMotor, int8_t speed) {
     } else {
         return 1;
     }
-
     return inBound;
 }
 
