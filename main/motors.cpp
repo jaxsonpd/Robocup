@@ -28,8 +28,9 @@
 #define I_CONTROL_GAIN 10 //  /100
 #define D_CONTROL_GAIN 0 //  /100
 #define GAIN_SCALING 100
+#define ERROR_INT_MAX 500000 
 
-#define SETPOINT_TOLERANCE 5 // Max error to recognise at setpoint
+#define SETPOINT_TOLERANCE 3 // Max error to recognise at setpoint
 #define SETPOINT_TIME 100 // Time before registering at setpoint
 
 #define MAX_HEADING 180
@@ -122,8 +123,6 @@ void motors_updateInfo(RobotInfo_t *robotInfo) {
         robotInfo->atHeading = false;
         timeAtSetpoint = 0;
     }
-
-
 }
 
 
@@ -144,7 +143,6 @@ bool motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16
     int32_t error = headingSetpoint - robotInfo->IMU_Heading;
 
     // Ensure error is pointing the right way
-
     if (error >= MAX_HEADING) {
       error -= HEADING_OFFSET;
     } else if (error < MIN_HEADING) {
@@ -153,6 +151,11 @@ bool motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16
 
     // Calculate the integral error
     errorInt += error * deltaT;
+
+    // Limit the integral error
+    errorInt = (errorInt > ERROR_INT_MAX) ? ERROR_INT_MAX : errorInt;
+    errorInt = (errorInt < -ERROR_INT_MAX) ? -ERROR_INT_MAX : errorInt;
+
 
     // Calculate the derivative error
     int32_t errorDer = (error - errorPrev)/deltaT;
