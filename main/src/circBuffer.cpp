@@ -91,6 +91,6 @@ int32_t circBuffer_average(circBuffer_t *circBuffer) {
         sum += circBuffer->data[i];
     }
 
-    return sum / circBuffer->size;
+    return sum / (int32_t) circBuffer->size;
 }
 
