@@ -12,11 +12,14 @@
 
 #include "motors.hpp"
 #include "robotInformation.hpp"
+#include "src/circBuffer.hpp"
 
 #include <stdint.h>
 #include <stdbool.h>
 
 // ===================================== Constants ====================================
+// #define TUNE
+
 // ** DC Motor parameters **
 #define MOTOR_1_PIN 7
 #define MOTOR_2_PIN 8
@@ -24,12 +27,13 @@
 #define MOTOR_SPEED_MAX 100
 #define MOTOR_SPEED_MIN -100
 
-#define P_CONTROL_GAIN 70 //  /100
-#define I_CONTROL_GAIN 10 //  /100
-#define D_CONTROL_GAIN 0 //  /100
+#define P_CONTROL_GAIN 65 //  /100
+#define I_CONTROL_GAIN 20 //  /100
+#define D_CONTROL_GAIN 20 //  /100
 #define GAIN_SCALING 100
 #define ERROR_INT_MAX 500000 
 #define DERIVATIVE_OFFSET 1000
+#define DERIVATIVE_BUFFER_SIZE 3
 
 #define SETPOINT_TOLERANCE 3 // Max error to recognise at setpoint
 #define SETPOINT_TIME 100 // Time before registering at setpoint
@@ -42,6 +46,7 @@
 
 // ===================================== Objects ======================================
 Servo M1, M2; // Define the servo objects for each motor
+circBuffer_t* derivativeBuffer = new circBuffer_t[DERIVATIVE_BUFFER_SIZE];
 
 // ===================================== Globals ======================================
 // Variables used to update the robotInfo struct in motors_updateInfo()
@@ -59,6 +64,8 @@ bool motors_setup(void) {
     // Attach the motors to each servo object
     M1.attach(MOTOR_1_PIN);
     M2.attach(MOTOR_2_PIN);
+
+    circBuffer_init(derivativeBuffer, DERIVATIVE_BUFFER_SIZE);
 
     return 0;
 }
@@ -100,31 +107,6 @@ bool motors_setSpeed(uint8_t selectedMotor, int8_t speed) {
 }
 
 
-/** 
- * @brief Update the motor speeds in the robotInfo struct
- * @param robotInfo The robotInfo struct to update
- * 
- */
-// void motors_updateInfo(RobotInfo_t *robotInfo) {
-//     // Update the motor speeds
-//     robotInfo->leftMotorSpeed = motor1Speed;
-//     robotInfo->rightMotorSpeed = motor2Speed;
-//     robotInfo->targetHeading = headingSP;
-
-//     // Check to see if the robot is at the setpoint
-//     static elapsedMillis timeAtSetpoint = 0;
-
-//     if (abs(robotInfo->targetHeading - robotInfo->IMU_Heading) <= SETPOINT_TOLERANCE) {
-//         if (timeAtSetpoint > SETPOINT_TIME) {
-//             robotInfo->atHeading = true;
-//         }
-//     } else {
-//         robotInfo->atHeading = false;
-//         timeAtSetpoint = 0;
-//     }
-// }
-
-
 /**
  * @brief Calculate the control value for the motors
  * @param setpoint The setpoint to follow
@@ -155,7 +137,11 @@ static int16_t calcControlValue(int16_t setpoint, int16_t heading) {
     }
 
     // Calculate the derivative of the error offset by 1000 to avoid floating point
-    int32_t derivativeError = (error - previousError) * DERIVATIVE_OFFSET / deltaT;
+    int32_t derivativeError = (error - previousError) * DERIVATIVE_OFFSET / ((int32_t) deltaT);
+
+    circBuffer_write(derivativeBuffer, derivativeError);
+
+    int32_t derivativeFiltered = circBuffer_average(derivativeBuffer);    
 
     // Update the previous error and deltaT
     previousError = error;
@@ -164,9 +150,21 @@ static int16_t calcControlValue(int16_t setpoint, int16_t heading) {
     // Calculate the control value
     int32_t PTerm = (error * P_CONTROL_GAIN) / GAIN_SCALING;
     int32_t ITerm = (intergralError * I_CONTROL_GAIN) / GAIN_SCALING / MS_TO_S;
-    int32_t DTerm = (derivativeError * D_CONTROL_GAIN) / GAIN_SCALING * (MS_TO_S / DERIVATIVE_OFFSET);
+    int32_t DTerm = (derivativeFiltered * D_CONTROL_GAIN) / GAIN_SCALING;
 
     int32_t controlValue = PTerm + ITerm + DTerm;
+
+    #ifdef TUNE
+    Serial.print(heading);
+    Serial.print(", ");
+    Serial.print(PTerm);
+    Serial.print(", ");
+    Serial.print(ITerm);
+    Serial.print(", ");
+    Serial.print(DTerm);
+    Serial.print(", ");
+    Serial.println(controlValue);
+    #endif // TUNE
 
     // Bound the control value
 
@@ -209,86 +207,20 @@ bool motors_followHeading(RobotInfo_t* robotInfo, int16_t headingSetpoint, int16
     robotInfo->rightMotorSpeed = motor2SpeedRaw;
     robotInfo->targetHeading = headingSetpoint;
 
-    return 1;
+    // Check to see if the robot is at the setpoint
+    static elapsedMillis timeAtSetpoint = 0;
+
+    if (abs(robotInfo->targetHeading - robotInfo->IMU_Heading) <= SETPOINT_TOLERANCE) {
+        if (timeAtSetpoint > SETPOINT_TIME) {
+            robotInfo->atHeading = true;
+        }
+    } else {
+        robotInfo->atHeading = false;
+        timeAtSetpoint = 0;
+    }
+
+    return robotInfo->atHeading;
 }
-
-
-
-
-
-// /** 
-//  * @brief Make the robot move to the heading setpoint
-//  * @param robotInfo The robotInfo struct to update
-//  * @param headingSetpoint The heading setpoint to follow
-//  * @param speed The speed to move at (0 is rotate on the spot, 100 is full speed)
-//  * 
-//  * @return 0 if at setpoint, 1 if not at setpoint
-//  */
-// bool motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16_t speed) {
-//     static int32_t errorInt = 0;
-//     static int32_t errorPrev = 0;
-//     static elapsedMillis deltaT = 0;
-    
-//     // Calculate the error
-//     int32_t error = headingSetpoint - robotInfo->IMU_Heading;
-
-//     // Ensure error is pointing the right way
-//     if (error >= MAX_HEADING) {
-//       error -= HEADING_OFFSET;
-//     } else if (error < MIN_HEADING) {
-//       error += HEADING_OFFSET;
-//     }
-
-//     // Calculate the integral error
-//     errorInt += error * deltaT;
-
-//     // Limit the integral error
-//     errorInt = (errorInt > ERROR_INT_MAX) ? ERROR_INT_MAX : errorInt;
-//     errorInt = (errorInt < -ERROR_INT_MAX) ? -ERROR_INT_MAX : errorInt;
-
-
-//     // Calculate the derivative error
-//     int32_t errorDer = (error - errorPrev)/deltaT;
-//     errorPrev = error;
-
-//     // Reset the timer
-//     deltaT = 0;
-
-//     // Calculate the control value
-//     int32_t controlValue = (P_CONTROL_GAIN * error 
-//                             + (I_CONTROL_GAIN * errorInt)/MS_TO_S 
-//                             + (D_CONTROL_GAIN * errorDer)/MS_TO_S)
-//                             /GAIN_SCALING;
-    
-//     // Calculate the motor speeds
-//     motor1Speed = speed + controlValue;
-//     motor2Speed = speed - controlValue;
-//     headingSP = headingSetpoint;
-
-//     // Check to see if the motor speeds are in range
-//     motor1Speed = (motor1Speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : motor1Speed;
-//     motor1Speed = (motor1Speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor1Speed;
-    
-//     motor2Speed = (motor2Speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : motor2Speed;
-//     motor2Speed = (motor2Speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor2Speed;
-
-//     // Set the motor speeds
-//     motors_setSpeed(MOTOR_1, motor1Speed);
-//     motors_setSpeed(MOTOR_2, motor2Speed);
-
-//     // Check to see if the robot is at the setpoint
-//     static elapsedMillis timeAtSetpoint = 0;
-
-//     if (abs(error) <= SETPOINT_TOLERANCE) {
-//         if (timeAtSetpoint > SETPOINT_TIME) {
-//             return 0;
-//         }
-//     } else {
-//         timeAtSetpoint = 0;
-//     }
-
-//     return 1;
-// }
 
 
 /** 
