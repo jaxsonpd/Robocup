@@ -15,6 +15,7 @@
 #include "robotInformation.hpp"
 #include "returnToBase.hpp"
 #include "weightCollection.hpp"
+#include "collector.hpp"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -47,7 +48,10 @@ void robot_setup() {
     if (sensors_init()) {
         Serial.println("Error setting up sensors");
     }
-
+    if (crane_setup()) {
+      Serial.println("Error setting up crane");
+    }
+    
     delay(1000);
 
     // Wait for the go button to be pressed
