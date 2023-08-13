@@ -26,6 +26,7 @@
 #define WEIGHT_CLOSE_DISTANCE 100
 #define HEADING_THRESHOLD 2
 #define OBSTICAL_CLOSE_DISTANCE 300
+#define NUM_DETECTIONS 3 // Number of times the weight must be detected before it is collected
 
 // ===================================== Globals ======================================
 enum states {
@@ -46,6 +47,7 @@ void findWeights(RobotInfo_t *robotInfo) {
     // Variables
     static bool firstRun = true; // True if first run in state
     static elapsedMillis moveTimer = 0; // Timer for moving to open area
+    static uint8_t weightDetectionOccurances = 0; // Counter for weight detection 
 
     static int16_t weightHeading = 0; // Heading of the weight
     static uint16_t weightDistance = 9000; // Distance of the weight
@@ -68,17 +70,11 @@ void findWeights(RobotInfo_t *robotInfo) {
             // Check for weight
             if ((robotInfo->IRTop_Distance > robotInfo->IRBottom_Distance) & (robotInfo->IRTop_Distance - robotInfo->IRBottom_Distance > WEIGHT_DIFFERENCE_THRESHOLD)) {
                 // Found a weight 
-                state = MOVE_TO_WEIGHT; // Move to the weight
-                firstRun = true;
-                weightHeading = robotInfo->IMU_Heading; // Set the weight heading
+                weightDetectionOccurances ++;
+            } else {
+                weightDetectionOccurances = 0;
             }
 
-            // Check if we have rotated 360
-            if (abs(robotInfo->IMU_Heading - startHeading) < HEADING_THRESHOLD) {
-                // We have rotated 360
-                state = MOVE_TO_OPEN; // Move to the most open area
-                firstRun = true;
-            }
 
             // Update the most open area heading
             if (robotInfo->IRTop_Distance > mostOpenDistance) {
@@ -86,8 +82,22 @@ void findWeights(RobotInfo_t *robotInfo) {
                 mostOpenHeading = robotInfo->IMU_Heading;
             }
 
-            // Rotate on the spot
-            motors_followHeading(robotInfo, robotInfo->IMU_Heading + ROTATION_OFFSET, 0);
+
+            // Update the state machine
+            if (weightDetectionOccurances >= NUM_DETECTIONS) { // Check to see if we should pick up the weight
+                // Weight has been detected enough times so collect it
+                state = MOVE_TO_WEIGHT; // Move to the weight
+                firstRun = true;
+                weightHeading = robotInfo->IMU_Heading; // Set the weight heading
+                weightDetectionOccurances = 0;
+            } else if (abs(robotInfo->IMU_Heading - startHeading) < HEADING_THRESHOLD) {  // Check if we have rotated 360
+                // We have rotated 360
+                state = MOVE_TO_OPEN; // Move to the most open area
+                firstRun = true;
+            } else {  // Rotate on the spot
+                motors_followHeading(robotInfo, robotInfo->IMU_Heading + ROTATION_OFFSET, 0);
+            }
+
             break;
 
         case MOVE_TO_OPEN: // Move to the most open area
@@ -96,19 +106,18 @@ void findWeights(RobotInfo_t *robotInfo) {
                 firstRun = false;
             }
 
-            // Check if we have moved for long enough
-            if (moveTimer > MOVE_TIME) { 
+
+            // Update the state machine
+            if (moveTimer > MOVE_TIME) { // Check if we have moved for long enough
                 state = ROTATING; // Rotate on the spot
                 firstRun = true;
-            }
-
-            // Check if obstacles infront of the robot
-            if (robotInfo->IRTop_Distance < OBSTICAL_CLOSE_DISTANCE) {
+            } else if (robotInfo->IRTop_Distance < OBSTICAL_CLOSE_DISTANCE) { // Check if obstacles infront of the robot
                 state = ROTATING; // Rotate on the spot
                 firstRun = true;
+            } else { // Move to the most open area
+                motors_followHeading(robotInfo, mostOpenHeading, MOVE_SPEED);
             }
 
-            motors_followHeading(robotInfo, mostOpenHeading, MOVE_SPEED); // Move to the most open area
             break;
         
         case MOVE_TO_WEIGHT: // Move to the weight
@@ -117,13 +126,16 @@ void findWeights(RobotInfo_t *robotInfo) {
                 firstRun = false;
             }
 
-            // Check if we are close to the weight
-            if (robotInfo->IRBottom_Distance < WEIGHT_CLOSE_DISTANCE) {
+
+            // Update the state machine
+            
+            if (robotInfo->IRBottom_Distance < WEIGHT_CLOSE_DISTANCE) { // Check if we are close to the weight
                 state = AT_WEIGHT; // We are at the weight
                 firstRun = true;
+            } else { // Move to the weight
+                motors_followHeading(robotInfo, weightHeading, MOVE_SPEED);
             }
-
-            motors_followHeading(robotInfo, weightHeading, MOVE_SPEED); // Move to the weight
+            
             break;
         
         case AT_WEIGHT: // Collect the weight
