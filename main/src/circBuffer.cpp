@@ -94,3 +94,14 @@ int32_t circBuffer_average(circBuffer_t *circBuffer) {
     return sum / (int32_t) circBuffer->size;
 }
 
+/**
+ * @brief Clear the circular buffer
+ * @param circBuffer pointer to the circular buffer to clear
+ * 
+ */
+void circBuffer_clear(circBuffer_t *circBuffer) {
+    for (int i = 0; i < circBuffer->size; i++) {
+        circBuffer->data[i] = 0;
+    }
+}
+

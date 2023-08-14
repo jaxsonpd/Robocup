@@ -95,6 +95,7 @@ void findWeights(RobotInfo_t *robotInfo) {
                 state = MOVE_TO_OPEN; // Move to the most open area
                 firstRun = true;
             } else {  // Rotate on the spot
+                motors_clearErrors(); // Ensure integral windup is limited
                 motors_followHeading(robotInfo, robotInfo->IMU_Heading + ROTATION_OFFSET, 0);
             }
 
@@ -105,7 +106,6 @@ void findWeights(RobotInfo_t *robotInfo) {
                 moveTimer = 0;
                 firstRun = false;
             }
-
 
             // Update the state machine
             if (moveTimer > MOVE_TIME) { // Check if we have moved for long enough
@@ -128,7 +128,6 @@ void findWeights(RobotInfo_t *robotInfo) {
 
 
             // Update the state machine
-            
             if (robotInfo->IRBottom_Distance < WEIGHT_CLOSE_DISTANCE) { // Check if we are close to the weight
                 state = AT_WEIGHT; // We are at the weight
                 firstRun = true;
@@ -149,9 +148,9 @@ void findWeights(RobotInfo_t *robotInfo) {
             if (robotInfo->IRBottom_Distance > WEIGHT_CLOSE_DISTANCE) {
                 state = ROTATING; // Rotate on the spot
                 firstRun = true;
+            } else {
+                motors_followHeading(robotInfo, weightHeading, 0); // Hold position
             }
-
-            motors_followHeading(robotInfo, weightHeading, 0); // Hold position
             break;
 
 

@@ -242,6 +242,16 @@ void motors_deinit(RobotInfo_t* robotInfo) {
 }
 
 
+/**
+ * @brief Clear the integral and derivative errors
+ * 
+ */
+void motors_clearErrors(void) {
+    intergralError = 0;
+    previousError = 0;
+    circBuffer_clear(derivativeBuffer);
+}
+
 
 
 /** 
