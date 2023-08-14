@@ -156,6 +156,8 @@ void findWeights(RobotInfo_t *robotInfo) {
 
 
     }
+
+    robotInfo->mode = state;
 }
 
 

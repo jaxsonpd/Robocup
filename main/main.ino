@@ -36,7 +36,7 @@ RobotInfo_t robotInfo = {0};
 void robot_setup() {
 	// Initialise the serial output
 	serialInit(SERIAL_BAUD_RATE);
-  Serial1.begin(SERIAL_BAUD_RATE);
+    Serial1.begin(SERIAL_BAUD_RATE);
 
 	// Initialise the main drive motors
     if (motors_setup()) {
@@ -105,6 +105,7 @@ void loop() {
 
     sensor_deInit();
     weightCollection_deInit(&robotInfo);
+    motors_deinit(&robotInfo);
 }
 
 

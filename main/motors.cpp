@@ -49,10 +49,8 @@ Servo M1, M2; // Define the servo objects for each motor
 circBuffer_t* derivativeBuffer = new circBuffer_t[DERIVATIVE_BUFFER_SIZE];
 
 // ===================================== Globals ======================================
-// Variables used to update the robotInfo struct in motors_updateInfo()
-// int16_t motor1Speed = 0; // Speed of motor 1 (-100 to 100)
-// int16_t motor2Speed = 0; // Speed of motor 2 (-100 to 100)
-// int16_t headingSP = 0;
+static int32_t intergralError = 0; // The integral of the error
+static int32_t previousError = 0; // The previous error
 
 // ===================================== Function Definitions =========================
 /**
@@ -116,8 +114,6 @@ bool motors_setSpeed(uint8_t selectedMotor, int8_t speed) {
  */
 static int16_t calcControlValue(int16_t setpoint, int16_t heading) {
     // Variables
-    static int32_t intergralError = 0; // The integral of the error
-    static int32_t previousError = 0; // The previous error
     static elapsedMillis deltaT = 0; // The time since the last calculation
     
     // Calculate the error and bound it
@@ -221,6 +217,31 @@ bool motors_followHeading(RobotInfo_t* robotInfo, int16_t headingSetpoint, int16
 
     return robotInfo->atHeading;
 }
+
+/**
+ * @brief De initialise the motors
+ * @param robotInfo The robotInfo struct to update
+ * 
+ */
+void motors_deinit(RobotInfo_t* robotInfo) {
+    motors_setSpeed(MOTOR_1, 0);
+    motors_setSpeed(MOTOR_2, 0);
+
+    robotInfo->leftMotorSpeed = 0;
+    robotInfo->rightMotorSpeed = 0;
+    robotInfo->targetHeading = 0;
+    robotInfo->atHeading = false;
+
+    M1.detach();
+    M2.detach();
+
+    delete derivativeBuffer;
+
+    intergralError = 0;
+    previousError = 0;
+}
+
+
 
 
 /** 

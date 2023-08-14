@@ -30,5 +30,6 @@ bool motors_setSpeed(uint8_t selectedMotor, int8_t speed);
 void motors_updateInfo(RobotInfo_t *robotInfo);
 bool motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16_t speed);
 bool motors_formShape(RobotInfo_t *robotInfo, uint32_t sideLenght, int16_t rotationAngle);
+void motors_deinit(RobotInfo_t* robotInfo);
 
 #endif // MOTOR_H
