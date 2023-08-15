@@ -12,6 +12,7 @@
 
 #define SERVO_1_PIN 29
 #define SERVO_2_PIN 28
+#define ELECTROMAGNET_PIN 20
 
 #define RELEASE_ANGLE 180
 #define COLLECT_ANGLE 0
@@ -29,7 +30,7 @@ Servo craneServo;
 bool crane_setup()
 {   
   craneServo.attach(SERVO_1_PIN); 
-  
+  pinMode(ELECTROMAGNET_PIN, OUTPUT);
   return 0;
 }
 
@@ -39,14 +40,17 @@ void crane_move_weight() {
   switch(state) {
     case standby:
       craneServo.write(STANDBY_ANGLE);
+      digitalWrite(ELECTROMAGNET_PIN, LOW);
       state = collect;
       break;
     case collect:
       craneServo.write(COLLECT_ANGLE);
+      digitalWrite(ELECTROMAGNET_PIN, HIGH);
       state = release;
       break;
     case release:
       craneServo.write(RELEASE_ANGLE);
+      digitalWrite(ELECTROMAGNET_PIN, HIGH);
       state = standby;
       
   };
