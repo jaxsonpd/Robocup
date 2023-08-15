@@ -88,10 +88,12 @@ void loop() {
 
         
         // perform actions
-        if (PIDTimer > 50) {
-            findWeights(&robotInfo);
+        if (PIDTimer > 1000) {
+            // findWeights(&robotInfo);
             // motors_formShape(&robotInfo, 5000, 90);
             // motors_followHeading(&robotInfo, 0, 35);
+            crane_move_weight();
+            
             PIDTimer = 0;
         }
 
@@ -110,5 +112,3 @@ void loop() {
     sensor_deInit();
     weightCollection_deInit(&robotInfo);
 }
-
-

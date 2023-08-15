@@ -10,8 +10,8 @@
 #include <Servo.h>
 
 
-#define SERVO_1_PIN 28
-#define SERVO_2_PIN 29
+#define SERVO_1_PIN 29
+#define SERVO_2_PIN 28
 
 #define RELEASE_ANGLE 180
 #define COLLECT_ANGLE 0
@@ -34,7 +34,7 @@ bool crane_setup()
 }
 
 
-int crane_move_weight() {
+void crane_move_weight() {
   static int state = standby;
   switch(state) {
     case standby:
@@ -50,5 +50,5 @@ int crane_move_weight() {
       state = standby;
       
   };
-  return 0;
+
 }
