@@ -12,6 +12,7 @@
 
 #include "motors.hpp"
 #include "robotInformation.hpp"
+#include "src/dcMotor.hpp"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -20,9 +21,6 @@
 // ** DC Motor parameters **
 #define MOTOR_1_PIN 7
 #define MOTOR_2_PIN 8
-
-#define MOTOR_SPEED_MAX 100
-#define MOTOR_SPEED_MIN -100
 
 #define P_CONTROL_GAIN 75 //  /100
 #define I_CONTROL_GAIN 0 //  /100
@@ -39,7 +37,8 @@
 #define MS_TO_S 1000
 
 // ===================================== Objects ======================================
-Servo M1, M2; // Define the servo objects for each motor
+dcMotor leftMotor;
+dcMotor rightMotor;
 
 // ===================================== Globals ======================================
 int16_t motor1Speed = 0; // Speed of motor 1 (-100 to 100)
@@ -54,49 +53,17 @@ int16_t headingSP = 0;
  */
 bool motors_setup(void) {
     // Attach the motors to each servo object
-    M1.attach(MOTOR_1_PIN);
-    M2.attach(MOTOR_2_PIN);
-
-    return 0;
-}
-
-/**
- * @brief Set the speed of a motor
- * 
- * @param motor The motor to set the speed of
- * @param speed The speed to set the motor to
- * 
- * @return success (0) or failure (1)
- */
-bool motors_setSpeed(uint8_t selectedMotor, int8_t speed) {
-    int16_t proccessedSpeed = 0; // The speed to set the motor to
-    bool inBound = true;
-
-    // Check to see if the speed is in range
-    if (speed > MOTOR_SPEED_MAX || speed < MOTOR_SPEED_MIN) {
-        inBound = false;
-        // speed = (speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : speed;
-        // speed = (speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : speed;
-    }
-
-    // Invert motor 2 speed
-    proccessedSpeed = (selectedMotor == MOTOR_1) ? -speed : speed;
-
-    // Convert the speed to 1050-1950
-    proccessedSpeed = map(proccessedSpeed, MOTOR_SPEED_MIN, MOTOR_SPEED_MAX, 1050, 1950);
-
-    // Set the speed of the motor
-    if (selectedMotor == MOTOR_1) {
-        M1.writeMicroseconds(proccessedSpeed);
-        motor1Speed = speed;
-    } else if (selectedMotor == MOTOR_2) {
-        M2.writeMicroseconds(proccessedSpeed);
-        motor2Speed = speed;
-    } else {
+    if (!leftMotor.init(MOTOR_1_PIN, 0)) {
+        Serial.println("Failed to initialise left motor!");
         return 1;
     }
 
-    return inBound;
+    if (!rightMotor.init(MOTOR_2_PIN, 1)) {
+        Serial.println("Failed to initialise right motor!");
+        return 1;
+    }
+
+    return 0;
 }
 
 
@@ -107,8 +74,8 @@ bool motors_setSpeed(uint8_t selectedMotor, int8_t speed) {
  */
 void motors_updateInfo(RobotInfo_t *robotInfo) {
     // Update the motor speeds
-    robotInfo->leftMotorSpeed = motor1Speed;
-    robotInfo->rightMotorSpeed = motor2Speed;
+    robotInfo->leftMotorSpeed = leftMotor.getSpeed();
+    robotInfo->rightMotorSpeed = rightMotor.getSpeed();
     robotInfo->targetHeading = headingSP;
 
     // Check to see if the robot is at the setpoint
@@ -180,10 +147,10 @@ bool motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16
     motor2Speed = (motor2Speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor2Speed;
 
     // Set the motor speeds
-    motors_setSpeed(MOTOR_1, motor1Speed);
-    motors_setSpeed(MOTOR_2, motor2Speed);
+    leftMotor.setSpeed(motor1Speed);
+    rightMotor.setSpeed(motor2Speed);
 
-    // Check to see if the robot is at the setpoint
+    // Check to see if the robot is at the setpoint !! Depreciated
     static elapsedMillis timeAtSetpoint = 0;
 
     if (abs(error) <= SETPOINT_TOLERANCE) {
@@ -238,4 +205,22 @@ bool motors_formShape(RobotInfo_t *robotInfo, uint32_t sideLenght, int16_t rotat
 }
 
 
+/**
+ * @brief de-initialise the motors
+ * 
+ * @return success (1) or failure (0)
+ */
+bool motors_deInit(void) {
+    // De-initialise the motors
+    if (!leftMotor.deInit()) {
+        Serial.println("Failed to de-initialise left motor!");
+        return 0;
+    }
 
+    if (!rightMotor.deInit()) {
+        Serial.println("Failed to de-initialise right motor!");
+        return 0;
+    }
+
+    return 1;
+}
