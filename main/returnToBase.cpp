@@ -205,7 +205,7 @@ void returnToBase(RobotInfo_t* robotInfo) {
                 targetHeading = targetHeading + 90; // Rotate by 90 degrees
                 
                 // Bound Heading
-                if (targetHeading > 180 {
+                if (targetHeading > 180) {
                     targetHeading -= 360;
                 } else if (targetHeading < -179) {
                     targetHeading += 360;
@@ -217,7 +217,7 @@ void returnToBase(RobotInfo_t* robotInfo) {
                 targetHeading = targetHeading - 90; // Rotate by 90 degrees
                 
                 // Bound Heading
-                if (targetHeading > 180 {
+                if (targetHeading > 180) {
                     targetHeading -= 360;
                 } else if (targetHeading < -179) {
                     targetHeading += 360;

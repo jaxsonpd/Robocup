@@ -18,15 +18,15 @@
 
 
 // ===================================== Types/Constants ==============================
-#define ROTATION_OFFSET 30
+#define ROTATION_OFFSET 20
 #define MOVE_SPEED 30
-#define MOVE_TIME 3000
+#define MOVE_TIME 10000
 
 #define WEIGHT_DIFFERENCE_THRESHOLD 100
 #define WEIGHT_CLOSE_DISTANCE 100
-#define HEADING_THRESHOLD 2
+#define HEADING_THRESHOLD 8
 #define OBSTICAL_CLOSE_DISTANCE 300
-#define NUM_DETECTIONS 3 // Number of times the weight must be detected before it is collected
+#define NUM_DETECTIONS 2 // Number of times the weight must be detected before it is collected
 
 // ===================================== Globals ======================================
 enum states {
@@ -62,7 +62,7 @@ void findWeights(RobotInfo_t *robotInfo) {
         case ROTATING: // Rotate on the spot and look for a weight
             if (firstRun) { // Setup the state
                 firstRun = false;
-                startHeading = robotInfo->IMU_Heading - 3; // Set the start heading to 2 degrees less than the current heading
+                startHeading = robotInfo->IMU_Heading - 10; // Set the start heading to 2 degrees less than the current heading
                 moveTimer = 0; // Reset the move timer
                 mostOpenDistance = 0;
             }
