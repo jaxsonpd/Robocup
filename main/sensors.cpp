@@ -62,38 +62,6 @@ IRTOF irTOF1;
 
 
 // ===================================== Function Definitions =========================
-/** 
- * @brief Setup the sensors for use
- * 
- * @return success (0) or failure (1)
- */
-bool sensors_init(void) {
-    // Initialise the IO expander
-    Wire.begin();
-    Wire.setClock(400000); // use 400 kHz I2C
-
-    io.begin(SX1509_ADDRESS);
-
-    // Initialise the IMU
-    if(!bno.begin()) {
-        return 1;
-    }
-
-    // Initialise the ultrasonic sensors
-    init_USTOF();
-    
-    // Initailise the IR TOF sensors
-    init_IRTOF();
-
-    // Initialise the buffers
-    circBuffer_init(us0Buffer, BUFFER_SIZE);
-    circBuffer_init(us1Buffer, BUFFER_SIZE);
-    circBuffer_init(headingBuffer, BUFFER_SIZE);
-
-    return 0;
-}
-
-
 /**
  * @brief initialise the IR TOF sensor
  * 
@@ -138,6 +106,45 @@ static void init_USTOF(void) {
     #ifdef US_3
         usAddToArray(US_TRIG_3, US_ECHO_3, 3);
     #endif
+}
+
+/** 
+ * @brief Setup the sensors for use
+ * 
+ * @return success (0) or failure (1)
+ */
+bool sensors_init(void) {
+    // Initialise the IO expander
+    Wire.begin();
+    Wire.setClock(400000); // use 400 kHz I2C
+
+    io.begin(SX1509_ADDRESS);
+
+    Serial.println("External IO init");
+
+    // Initialise the IMU
+    if(!bno.begin()) {
+        return 1;
+    }
+
+    Serial.println("IMU on");
+
+    // Initialise the ultrasonic sensors
+    init_USTOF();
+
+    Serial.println("US on");
+    
+    // Initailise the IR TOF sensors
+    init_IRTOF();
+
+    Serial.println("IRTOF on");
+
+    // Initialise the buffers
+    circBuffer_init(us0Buffer, BUFFER_SIZE);
+    circBuffer_init(us1Buffer, BUFFER_SIZE);
+    circBuffer_init(headingBuffer, BUFFER_SIZE);
+
+    return 0;
 }
 
 /*
@@ -202,7 +209,7 @@ void sensors_update(void) {
     usCalcArray(usArray, US_NUM, usDistances);
     
     // Start new ping cycle
-    usPingArray(usArray, US_NUM)
+    usPingArray(usArray, US_NUM);
     
     // Update Buffers
     circBuffer_write(us0Buffer, usDistances[0]);

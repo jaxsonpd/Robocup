@@ -34,16 +34,18 @@ RobotInfo_t robotInfo = {0};
 // ===================================== Function Definitions =========================
 
 void robot_setup() {
-	// Initialise the serial output
-	serialInit(SERIAL_BAUD_RATE);
-  Serial1.begin(SERIAL_BAUD_RATE);
+    // Initialise the serial output
+    serialInit(SERIAL_BAUD_RATE);
+    Serial1.begin(SERIAL_BAUD_RATE);
 
-	// Initialise the main drive motors
+	  // Initialise the main drive motors
+    Serial.println("Initialising motors");
     if (motors_setup()) {
         Serial.println("Error setting up motors");
 
     }
 
+    Serial.println("Initialising sensors");
     if (sensors_init()) {
         Serial.println("Error setting up sensors");
     }
@@ -70,11 +72,12 @@ void loop() {
     elapsedMillis slowUpdateTimer = 0;
 
 	  while(running) {
+
         if (sensorUpdateTimer > 5) {
             sensors_update();
             sensorUpdateTimer = 0;
         }
-        
+
         // Update robot information
         if (robotInfoUpdateTimer > 100) {
             motors_updateInfo(&robotInfo);
@@ -91,13 +94,13 @@ void loop() {
             PIDTimer = 0;
         }
 
-        if (slowUpdateTimer > 100) {
-            char buffer[150];
-            sprintf(buffer, "IR T: %4d, B: %4d, M: %1d, IMU: %3d, %3d \n", robotInfo.IRTop_Distance, robotInfo.IRBottom_Distance, robotInfo.mode, robotInfo.IMU_Heading, robotInfo.targetHeading);
+        // if (slowUpdateTimer > 100) {
+        //     char buffer[150];
+        //     sprintf(buffer, "IR T: %4d, B: %4d, M: %1d, IMU: %3d, %3d \n", robotInfo.IRTop_Distance, robotInfo.IRBottom_Distance, robotInfo.mode, robotInfo.IMU_Heading, robotInfo.targetHeading);
 
-            Serial1.write(buffer);
-            slowUpdateTimer = 0;
-        }
+        //     Serial1.write(buffer);
+        //     slowUpdateTimer = 0;
+        // }
 
         // Check if the robot should keep running
         running = checkStopped();

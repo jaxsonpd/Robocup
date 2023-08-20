@@ -12,6 +12,7 @@
 #include <stdbool.h>
 
 #include "VL53L0X.h"
+#include "IRTOF.hpp"
 
 #include "circBuffer.hpp"
 
@@ -38,10 +39,10 @@ bool IRTOF::init(uint8_t address, uint8_t XSHUT, uint8_t bufferSize) {
     address = address;
     XSHUT = XSHUT;
     bufferSize = bufferSize;
-    externalIO = externalIO;
 
     // Initialise the buffer
     distanceBuffer = new circBuffer_t[bufferSize];
+    circBuffer_init(distanceBuffer, bufferSize);
 
     sensor.setTimeout(500);
     if (!sensor.init()) {
@@ -49,6 +50,8 @@ bool IRTOF::init(uint8_t address, uint8_t XSHUT, uint8_t bufferSize) {
         return 0;
     }
     sensor.setAddress(address);
+
+
 
     // Start continuous back-to-back mode (take readings as fast as possible).
     sensor.startContinuous();
@@ -71,7 +74,9 @@ void IRTOF::deInit(void) {
  * 
  */
 void IRTOF::update(void) {
-    circBuffer_write(distanceBuffer, sensor.readRangeContinuousMillimeters());
+    int32_t sensorReading = sensor.readRangeContinuousMillimeters();
+    circBuffer_write(distanceBuffer, sensorReading);
+
 }
 
 /**
