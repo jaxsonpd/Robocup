@@ -15,6 +15,7 @@
 #include "robotInformation.hpp"
 #include "returnToBase.hpp"
 #include "weightCollection.hpp"
+#include "collector.hpp"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -34,8 +35,13 @@ RobotInfo_t robotInfo = {0};
 // ===================================== Function Definitions =========================
 
 void robot_setup() {
+<<<<<<< main/main.ino
     // Initialise the serial output
     serialInit(SERIAL_BAUD_RATE);
+=======
+	// Initialise the serial output
+	serialInit(SERIAL_BAUD_RATE);
+>>>>>>> main/main.ino
     Serial1.begin(SERIAL_BAUD_RATE);
 
 	  // Initialise the main drive motors
@@ -49,7 +55,10 @@ void robot_setup() {
     if (sensors_init()) {
         Serial.println("Error setting up sensors");
     }
-
+    if (crane_setup()) {
+      Serial.println("Error setting up crane");
+    }
+    
     delay(1000);
 
     // Wait for the go button to be pressed
@@ -80,7 +89,6 @@ void loop() {
 
         // Update robot information
         if (robotInfoUpdateTimer > 100) {
-            motors_updateInfo(&robotInfo);
             sensors_updateInfo(&robotInfo);
             printRobotInfo(&robotInfo);
             robotInfoUpdateTimer = 0;
@@ -88,9 +96,12 @@ void loop() {
 
         
         // perform actions
-        if (PIDTimer > 50) {
-            findWeights(&robotInfo);
-            // motors_formShape(&robotInfo, 2, 90);
+        if (PIDTimer > 1000) {
+            // findWeights(&robotInfo);
+            // motors_formShape(&robotInfo, 5000, 90);
+            // motors_followHeading(&robotInfo, 0, 35);
+            crane_move_weight();
+            
             PIDTimer = 0;
         }
 
@@ -107,6 +118,6 @@ void loop() {
 	  }
 
     sensor_deInit();
+    weightCollection_deInit(&robotInfo);
+    motors_deinit(&robotInfo);
 }
-
-
