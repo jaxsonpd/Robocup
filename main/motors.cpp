@@ -12,7 +12,11 @@
 
 #include "motors.hpp"
 #include "robotInformation.hpp"
+<<<<<<< main/motors.cpp
+#include "src/dcMotor.hpp"
+=======
 #include "src/circBuffer.hpp"
+>>>>>>> main/motors.cpp
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -24,12 +28,18 @@
 #define MOTOR_1_PIN 7
 #define MOTOR_2_PIN 8
 
+<<<<<<< main/motors.cpp
+#define P_CONTROL_GAIN 75 //  /100
+#define I_CONTROL_GAIN 0 //  /100
+#define D_CONTROL_GAIN 0 //  /100
+=======
 #define MOTOR_SPEED_MAX 100
 #define MOTOR_SPEED_MIN -100
 
 #define P_CONTROL_GAIN 65 //  /100
 #define I_CONTROL_GAIN 20 //  /100
 #define D_CONTROL_GAIN 20 //  /100
+>>>>>>> main/motors.cpp
 #define GAIN_SCALING 100
 #define ERROR_INT_MAX 500000 
 #define DERIVATIVE_OFFSET 1000
@@ -45,8 +55,13 @@
 #define MS_TO_S 1000
 
 // ===================================== Objects ======================================
+<<<<<<< main/motors.cpp
+dcMotor leftMotor;
+dcMotor rightMotor;
+=======
 Servo M1, M2; // Define the servo objects for each motor
 circBuffer_t* derivativeBuffer = new circBuffer_t[DERIVATIVE_BUFFER_SIZE];
+>>>>>>> main/motors.cpp
 
 // ===================================== Globals ======================================
 static int32_t intergralError = 0; // The integral of the error
@@ -60,6 +75,19 @@ static int32_t previousError = 0; // The previous error
  */
 bool motors_setup(void) {
     // Attach the motors to each servo object
+<<<<<<< main/motors.cpp
+    if (!leftMotor.init(MOTOR_1_PIN, 0)) {
+        Serial.println("Failed to initialise left motor!");
+        return 1;
+    }
+
+    if (!rightMotor.init(MOTOR_2_PIN, 1)) {
+        Serial.println("Failed to initialise right motor!");
+        return 1;
+    }
+
+    return 0;
+=======
     M1.attach(MOTOR_1_PIN);
     M2.attach(MOTOR_2_PIN);
 
@@ -102,6 +130,7 @@ bool motors_setSpeed(uint8_t selectedMotor, int8_t speed) {
         return 1;
     }
     return inBound;
+>>>>>>> main/motors.cpp
 }
 
 
@@ -112,6 +141,16 @@ bool motors_setSpeed(uint8_t selectedMotor, int8_t speed) {
  * 
  * @return The control value for the motors
  */
+<<<<<<< main/motors.cpp
+void motors_updateInfo(RobotInfo_t *robotInfo) {
+    // Update the motor speeds
+    robotInfo->leftMotorSpeed = leftMotor.getSpeed();
+    robotInfo->rightMotorSpeed = rightMotor.getSpeed();
+    robotInfo->targetHeading = headingSP;
+
+    // Check to see if the robot is at the setpoint
+    static elapsedMillis timeAtSetpoint = 0;
+=======
 static int16_t calcControlValue(int16_t setpoint, int16_t heading) {
     // Variables
     static elapsedMillis deltaT = 0; // The time since the last calculation
@@ -123,6 +162,7 @@ static int16_t calcControlValue(int16_t setpoint, int16_t heading) {
     } else if (error < MIN_HEADING) {
       error += HEADING_OFFSET;
     }
+>>>>>>> main/motors.cpp
 
     // Calculate the integral of the error
     intergralError += error * deltaT;
@@ -195,6 +235,10 @@ bool motors_followHeading(RobotInfo_t* robotInfo, int16_t headingSetpoint, int16
     motor2SpeedRaw = (motor2SpeedRaw < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor2SpeedRaw;
 
     // Set the motor speeds
+<<<<<<< main/motors.cpp
+    leftMotor.setSpeed(motor1Speed);
+    rightMotor.setSpeed(motor2Speed);
+=======
     motors_setSpeed(MOTOR_1, motor1SpeedRaw);
     motors_setSpeed(MOTOR_2, motor2SpeedRaw);
 
@@ -202,8 +246,9 @@ bool motors_followHeading(RobotInfo_t* robotInfo, int16_t headingSetpoint, int16
     robotInfo->leftMotorSpeed = motor1SpeedRaw;
     robotInfo->rightMotorSpeed = motor2SpeedRaw;
     robotInfo->targetHeading = headingSetpoint;
+>>>>>>> main/motors.cpp
 
-    // Check to see if the robot is at the setpoint
+    // Check to see if the robot is at the setpoint !! Depreciated
     static elapsedMillis timeAtSetpoint = 0;
 
     if (abs(robotInfo->targetHeading - robotInfo->IMU_Heading) <= SETPOINT_TOLERANCE) {
@@ -294,4 +339,22 @@ bool motors_formShape(RobotInfo_t *robotInfo, uint32_t sideLenght, int16_t rotat
 }
 
 
+/**
+ * @brief de-initialise the motors
+ * 
+ * @return success (1) or failure (0)
+ */
+bool motors_deInit(void) {
+    // De-initialise the motors
+    if (!leftMotor.deInit()) {
+        Serial.println("Failed to de-initialise left motor!");
+        return 0;
+    }
 
+    if (!rightMotor.deInit()) {
+        Serial.println("Failed to de-initialise right motor!");
+        return 0;
+    }
+
+    return 1;
+}

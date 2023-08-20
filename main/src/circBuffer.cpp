@@ -87,7 +87,7 @@ void circBuffer_free(circBuffer_t *circBuffer) {
 int32_t circBuffer_average(circBuffer_t *circBuffer) {
     int32_t sum = 0;
 
-    for (int i = 0; i < circBuffer->size; i++) {
+    for (uint32_t i = 0; i < circBuffer->size; i++) {
         sum += circBuffer->data[i];
     }
 
