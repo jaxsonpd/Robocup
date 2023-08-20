@@ -1,13 +1,13 @@
 /** 
- * @file IRTOF.h
+ * @file IRTOF0.h
  * @brief Header file for the IRTOF class
  * @author Jack Duignan (Jdu80@uclive.ac.nz)
  * @date 2023-08-08
  */
 
 
-#ifndef IRTOF_H
-#define IRTOF_H
+#ifndef IRTOF0_H
+#define IRTOF0_H
 
 
 // ===================================== Includes =====================================
@@ -23,7 +23,7 @@
  * @brief The IRTOF class used to interface with the VL53L0x Time of Flight sensor.
  * 
  */
-class IRTOF {
+class IRTOF0 {
     public:
         bool init(uint8_t address, uint8_t XSHUT, uint8_t bufferSize);
         void deInit(void);
@@ -40,4 +40,4 @@ class IRTOF {
 // ===================================== Function Prototypes ==========================
 
 
-#endif // IRTOF_H
+#endif // IRTOF0_H
