@@ -19,6 +19,7 @@
 #include "robotInformation.hpp"
 #include "src/circBuffer.hpp"
 #include "src/IRTOF0.hpp"
+#include "src/IRTOF1.hpp"
 
 #include "src/USConfig.hpp"
 #include "src/IRTOFConfig.hpp"
@@ -57,8 +58,8 @@ circBuffer_t* us1Buffer = new circBuffer_t[BUFFER_SIZE]; // Right US
 circBuffer_t* headingBuffer = new circBuffer_t[BUFFER_SIZE];
 
 // create IR TOF sensor objects
-IRTOF0 irTOF0;
-IRTOF0 irTOF1;
+IRTOF1 irTOF0;
+IRTOF1 irTOF1;
 
 
 // ===================================== Function Definitions =========================

@@ -12,7 +12,7 @@
 #include <stdbool.h>
 
 #include "VL53L0X.h"
-#include "IRTOF.hpp"
+#include "IRTOF0.hpp"
 
 #include "circBuffer.hpp"
 

@@ -12,11 +12,8 @@
 
 #include "motors.hpp"
 #include "robotInformation.hpp"
-<<<<<<< main/motors.cpp
 #include "src/dcMotor.hpp"
-=======
 #include "src/circBuffer.hpp"
->>>>>>> main/motors.cpp
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -28,20 +25,12 @@
 #define MOTOR_1_PIN 7
 #define MOTOR_2_PIN 8
 
-<<<<<<< main/motors.cpp
-#define P_CONTROL_GAIN 75 //  /100
-#define I_CONTROL_GAIN 0 //  /100
-#define D_CONTROL_GAIN 0 //  /100
-=======
-#define MOTOR_SPEED_MAX 100
-#define MOTOR_SPEED_MIN -100
-
 #define P_CONTROL_GAIN 65 //  /100
 #define I_CONTROL_GAIN 20 //  /100
 #define D_CONTROL_GAIN 20 //  /100
->>>>>>> main/motors.cpp
+
 #define GAIN_SCALING 100
-#define ERROR_INT_MAX 500000 
+#define ERROR_INT_MAX 50000
 #define DERIVATIVE_OFFSET 1000
 #define DERIVATIVE_BUFFER_SIZE 3
 
@@ -55,13 +44,10 @@
 #define MS_TO_S 1000
 
 // ===================================== Objects ======================================
-<<<<<<< main/motors.cpp
 dcMotor leftMotor;
 dcMotor rightMotor;
-=======
-Servo M1, M2; // Define the servo objects for each motor
+
 circBuffer_t* derivativeBuffer = new circBuffer_t[DERIVATIVE_BUFFER_SIZE];
->>>>>>> main/motors.cpp
 
 // ===================================== Globals ======================================
 static int32_t intergralError = 0; // The integral of the error
@@ -75,7 +61,6 @@ static int32_t previousError = 0; // The previous error
  */
 bool motors_setup(void) {
     // Attach the motors to each servo object
-<<<<<<< main/motors.cpp
     if (!leftMotor.init(MOTOR_1_PIN, 0)) {
         Serial.println("Failed to initialise left motor!");
         return 1;
@@ -86,51 +71,9 @@ bool motors_setup(void) {
         return 1;
     }
 
-    return 0;
-=======
-    M1.attach(MOTOR_1_PIN);
-    M2.attach(MOTOR_2_PIN);
-
     circBuffer_init(derivativeBuffer, DERIVATIVE_BUFFER_SIZE);
 
     return 0;
-}
-
-/**
- * @brief Set the speed of a motor
- * 
- * @param motor The motor to set the speed of
- * @param speed The speed to set the motor to
- * 
- * @return success (0) or failure (1)
- */
-bool motors_setSpeed(uint8_t selectedMotor, int8_t speed) {
-    int16_t proccessedSpeed = 0; // The speed to set the motor to
-    bool inBound = true;
-
-    // Check to see if the speed is in range
-    if (speed > MOTOR_SPEED_MAX || speed < MOTOR_SPEED_MIN) {
-        inBound = false;
-        speed = (speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : speed;
-        speed = (speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : speed;
-    }
-
-    // Invert motor 2 speed
-    proccessedSpeed = (selectedMotor == MOTOR_1) ? -speed : speed;
-
-    // Convert the speed to 1050-1950
-    proccessedSpeed = map(proccessedSpeed, MOTOR_SPEED_MIN, MOTOR_SPEED_MAX, 1050, 1950);
-
-    // Set the speed of the motor
-    if (selectedMotor == MOTOR_1) {
-        M1.writeMicroseconds(proccessedSpeed);
-    } else if (selectedMotor == MOTOR_2) {
-        M2.writeMicroseconds(proccessedSpeed);
-    } else {
-        return 1;
-    }
-    return inBound;
->>>>>>> main/motors.cpp
 }
 
 
@@ -141,16 +84,6 @@ bool motors_setSpeed(uint8_t selectedMotor, int8_t speed) {
  * 
  * @return The control value for the motors
  */
-<<<<<<< main/motors.cpp
-void motors_updateInfo(RobotInfo_t *robotInfo) {
-    // Update the motor speeds
-    robotInfo->leftMotorSpeed = leftMotor.getSpeed();
-    robotInfo->rightMotorSpeed = rightMotor.getSpeed();
-    robotInfo->targetHeading = headingSP;
-
-    // Check to see if the robot is at the setpoint
-    static elapsedMillis timeAtSetpoint = 0;
-=======
 static int16_t calcControlValue(int16_t setpoint, int16_t heading) {
     // Variables
     static elapsedMillis deltaT = 0; // The time since the last calculation
@@ -162,7 +95,6 @@ static int16_t calcControlValue(int16_t setpoint, int16_t heading) {
     } else if (error < MIN_HEADING) {
       error += HEADING_OFFSET;
     }
->>>>>>> main/motors.cpp
 
     // Calculate the integral of the error
     intergralError += error * deltaT;
@@ -214,6 +146,7 @@ static int16_t calcControlValue(int16_t setpoint, int16_t heading) {
  * @param headingSetpoint The heading setpoint to follow
  * @param forwardSpeed The speed to move at (0 is rotate on the spot, 100 is full speed)
  * 
+ * @return true if at setpoint
  */
 bool motors_followHeading(RobotInfo_t* robotInfo, int16_t headingSetpoint, int16_t forwardSpeed) {
     // Variables
@@ -235,18 +168,11 @@ bool motors_followHeading(RobotInfo_t* robotInfo, int16_t headingSetpoint, int16
     motor2SpeedRaw = (motor2SpeedRaw < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor2SpeedRaw;
 
     // Set the motor speeds
-<<<<<<< main/motors.cpp
-    leftMotor.setSpeed(motor1Speed);
-    rightMotor.setSpeed(motor2Speed);
-=======
-    motors_setSpeed(MOTOR_1, motor1SpeedRaw);
-    motors_setSpeed(MOTOR_2, motor2SpeedRaw);
+    leftMotor.setSpeed(motor1SpeedRaw);
+    rightMotor.setSpeed(motor2SpeedRaw);
 
-    // Update the robotInfo struct
-    robotInfo->leftMotorSpeed = motor1SpeedRaw;
-    robotInfo->rightMotorSpeed = motor2SpeedRaw;
-    robotInfo->targetHeading = headingSetpoint;
->>>>>>> main/motors.cpp
+    robotInfo->leftMotorSpeed = leftMotor.getSpeed();
+    robotInfo->rightMotorSpeed = rightMotor.getSpeed();
 
     // Check to see if the robot is at the setpoint !! Depreciated
     static elapsedMillis timeAtSetpoint = 0;
@@ -269,16 +195,16 @@ bool motors_followHeading(RobotInfo_t* robotInfo, int16_t headingSetpoint, int16
  * 
  */
 void motors_deinit(RobotInfo_t* robotInfo) {
-    motors_setSpeed(MOTOR_1, 0);
-    motors_setSpeed(MOTOR_2, 0);
+    leftMotor.setSpeed(0);
+    rightMotor.setSpeed(0);
 
     robotInfo->leftMotorSpeed = 0;
     robotInfo->rightMotorSpeed = 0;
     robotInfo->targetHeading = 0;
     robotInfo->atHeading = false;
 
-    M1.detach();
-    M2.detach();
+    leftMotor.deInit();
+    rightMotor.deInit();
 
     delete derivativeBuffer;
 

@@ -10,8 +10,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include <arduino.h>
-#include <servo.h>
+#include <Arduino.h>
+#include <Servo.h>
 
 #include "dcMotor.hpp"
 // ===================================== Types/Constants ==============================
@@ -52,8 +52,8 @@ bool dcMotor::setSpeed(int16_t speed) {
     // Check to see if the speed is in range
     if (speed > MOTOR_SPEED_MAX || speed < MOTOR_SPEED_MIN) {
         inBound = false;
-        // speed = (speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : speed;
-        // speed = (speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : speed;
+        speed = (speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : speed;
+        speed = (speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : speed;
     }
 
     // Invert motor 2 speed

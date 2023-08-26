@@ -13,6 +13,8 @@
 #include "VL53L1X.h"
 #include "IRTOF1.hpp"
 
+#include "circBuffer.hpp"
+
 // ===================================== Types/Constants ==============================
 #define ADDRESS_DEFAULT 0b0101001 // Defult IR TOF Address
 
@@ -45,8 +47,10 @@ bool IRTOF1::init(uint8_t address, uint8_t XSHUT, uint8_t bufferSize) {
     }
     sensor.setAddress(address);
 
-    sensor.setDistanceMode(VL53L1X::Short)
+    sensor.setDistanceMode(VL53L1X::Long);
     sensor.startContinuous(20);
+
+    return 1;
 }
 
 

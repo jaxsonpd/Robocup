@@ -35,13 +35,8 @@ RobotInfo_t robotInfo = {0};
 // ===================================== Function Definitions =========================
 
 void robot_setup() {
-<<<<<<< main/main.ino
     // Initialise the serial output
     serialInit(SERIAL_BAUD_RATE);
-=======
-	// Initialise the serial output
-	serialInit(SERIAL_BAUD_RATE);
->>>>>>> main/main.ino
     Serial1.begin(SERIAL_BAUD_RATE);
 
 	  // Initialise the main drive motors
@@ -99,8 +94,8 @@ void loop() {
         if (PIDTimer > 1000) {
             // findWeights(&robotInfo);
             // motors_formShape(&robotInfo, 5000, 90);
-            // motors_followHeading(&robotInfo, 0, 35);
-            crane_move_weight();
+            motors_followHeading(&robotInfo, 0, 35);
+            // crane_move_weight();
             
             PIDTimer = 0;
         }

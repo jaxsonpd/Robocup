@@ -14,6 +14,9 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include <Arduino.h>
+#include <Servo.h>
+
 
 // ===================================== Types/Constants ==============================
 #define MOTOR_SPEED_MAX 100

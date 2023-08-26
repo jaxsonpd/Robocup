@@ -29,11 +29,6 @@ bool motors_setup();
 void motors_updateInfo(RobotInfo_t *robotInfo);
 bool motors_followHeading(RobotInfo_t *robotInfo, int16_t headingSetpoint, int16_t speed);
 bool motors_formShape(RobotInfo_t *robotInfo, uint32_t sideLenght, int16_t rotationAngle);
-<<<<<<< main/motors.hpp
-bool motors_deInit(void);
-=======
 void motors_deinit(RobotInfo_t* robotInfo);
 void motors_clearErrors(void);
-
->>>>>>> main/motors.hpp
 #endif // MOTOR_H
