@@ -48,5 +48,10 @@ void printRobotInfo(RobotInfo_t* robotInfo) {
         robotInfo->mode);
 
     Serial.print(buffer);
+
+    char Serial1Buffer[150];
+    sprintf(Serial1Buffer, "IR T: %4d, B: %4d, M: %1d, IMU: %3d, %3d \n", robotInfo->IRTop_Distance, robotInfo->IRBottom_Distance, robotInfo->mode, robotInfo->IMU_Heading, robotInfo->targetHeading);
+
+    Serial1.write(Serial1Buffer);
     
 }  

@@ -47,7 +47,7 @@ bool IRTOF1::init(uint8_t address, uint8_t XSHUT, uint8_t bufferSize) {
     }
     sensor.setAddress(address);
 
-    sensor.setDistanceMode(VL53L1X::Long);
+    sensor.setDistanceMode(VL53L1X::Short);
     sensor.startContinuous(20);
 
     return 1;

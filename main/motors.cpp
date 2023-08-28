@@ -25,7 +25,7 @@
 #define MOTOR_1_PIN 7
 #define MOTOR_2_PIN 8
 
-#define P_CONTROL_GAIN 65 //  /100
+#define P_CONTROL_GAIN 70 //  /100
 #define I_CONTROL_GAIN 20 //  /100
 #define D_CONTROL_GAIN 20 //  /100
 
@@ -186,6 +186,7 @@ bool motors_followHeading(RobotInfo_t* robotInfo, int16_t headingSetpoint, int16
         timeAtSetpoint = 0;
     }
 
+    robotInfo->targetHeading = headingSetpoint;
     return robotInfo->atHeading;
 }
 
@@ -194,7 +195,7 @@ bool motors_followHeading(RobotInfo_t* robotInfo, int16_t headingSetpoint, int16
  * @param robotInfo The robotInfo struct to update
  * 
  */
-void motors_deinit(RobotInfo_t* robotInfo) {
+void motors_deInit(RobotInfo_t* robotInfo) {
     leftMotor.setSpeed(0);
     rightMotor.setSpeed(0);
 
@@ -203,8 +204,15 @@ void motors_deinit(RobotInfo_t* robotInfo) {
     robotInfo->targetHeading = 0;
     robotInfo->atHeading = false;
 
-    leftMotor.deInit();
-    rightMotor.deInit();
+    if (!leftMotor.deInit()) {
+        Serial.println("Failed to de-initialise left motor!");
+        return 0;
+    }
+
+    if (!rightMotor.deInit()) {
+        Serial.println("Failed to de-initialise right motor!");
+        return 0;
+    }
 
     delete derivativeBuffer;
 
@@ -224,63 +232,58 @@ void motors_clearErrors(void) {
 }
 
 
-
-/** 
- * @brief Make the robot move in a shape
- * @param robotInfo the robot information struct
- * @param sideLength the lenght in seconds of each side to complete
- * @param rotationAngle the angle to rotate at each corner
- * 
- * @return 0 if at setpoint, 1 if not at setpoint
+/**
+ * @brief Control the left motor directly
+ * @param speed the speed to set the left motor
  */
-bool motors_formShape(RobotInfo_t *robotInfo, uint32_t sideLenght, int16_t rotationAngle) {
-    static uint8_t state = 0;
-    static elapsedMillis timeAtState;
-    static int16_t targetHeading = 0;
-    bool atSetpoint = 0;
-
-    switch (state) {
-        case 0: // Move forward
-            atSetpoint = motors_followHeading(robotInfo, targetHeading, 30);
-            if (timeAtState > sideLenght) {
-                state = 1;
-                timeAtState = 0;
-                targetHeading += rotationAngle;
-
-                if (targetHeading > MAX_HEADING) {
-                    targetHeading -= 360;
-                }
-            }
-            break;
-        case 1: // Turn 90 degrees
-            atSetpoint = motors_followHeading(robotInfo, targetHeading, 0);
-            if (atSetpoint == 0) {
-                state = 0;
-                timeAtState = 0;
-            }
-            break;
-    }
-
-    return atSetpoint;
+void motors_setLeft(int16_t speed) {
+    leftMotor.setSpeed(speed);
 }
-
 
 /**
- * @brief de-initialise the motors
- * 
- * @return success (1) or failure (0)
+ * @brief Control the left motor directly
+ * @param speed the speed to set the left motor
  */
-bool motors_deInit(void) {
-    // De-initialise the motors
-    if (!leftMotor.deInit()) {
-        Serial.println("Failed to de-initialise left motor!");
-        return 0;
-    }
-
-    if (!rightMotor.deInit()) {
-        Serial.println("Failed to de-initialise right motor!");
-        return 0;
-    }
-
-    return 1;
+void motors_setRight(int16_t speed) {
+    rightMotor.setSpeed(speed);
 }
+
+
+// /** 
+//  * @brief Make the robot move in a shape
+//  * @param robotInfo the robot information struct
+//  * @param sideLength the lenght in seconds of each side to complete
+//  * @param rotationAngle the angle to rotate at each corner
+//  * 
+//  * @return 0 if at setpoint, 1 if not at setpoint
+//  */
+// bool motors_formShape(RobotInfo_t *robotInfo, uint32_t sideLenght, int16_t rotationAngle) {
+//     static uint8_t state = 0;
+//     static elapsedMillis timeAtState;
+//     static int16_t targetHeading = 0;
+//     bool atSetpoint = 0;
+
+//     switch (state) {
+//         case 0: // Move forward
+//             atSetpoint = motors_followHeading(robotInfo, targetHeading, 30);
+//             if (timeAtState > sideLenght) {
+//                 state = 1;
+//                 timeAtState = 0;
+//                 targetHeading += rotationAngle;
+
+//                 if (targetHeading > MAX_HEADING) {
+//                     targetHeading -= 360;
+//                 }
+//             }
+//             break;
+//         case 1: // Turn 90 degrees
+//             atSetpoint = motors_followHeading(robotInfo, targetHeading, 0);
+//             if (atSetpoint == 0) {
+//                 state = 0;
+//                 timeAtState = 0;
+//             }
+//             break;
+//     }
+
+//     return atSetpoint;
+// }
