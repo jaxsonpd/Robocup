@@ -35,24 +35,24 @@ RobotInfo_t robotInfo = {0};
 // ===================================== Function Definitions =========================
 
 void robot_setup() {
-	// Initialise the serial output
-	serialInit(SERIAL_BAUD_RATE);
-  Serial1.begin(SERIAL_BAUD_RATE);
+    // Initialise the serial output
+    serialInit(SERIAL_BAUD_RATE);
+    Serial1.begin(SERIAL_BAUD_RATE);
 
-	// Initialise the main drive motors
+	  // Initialise the main drive motors
+    Serial.println("Initialising motors");
     if (motors_setup()) {
         Serial.println("Error setting up motors");
 
     }
 
+    Serial.println("Initialising sensors");
     if (sensors_init()) {
         Serial.println("Error setting up sensors");
     }
     if (crane_setup()) {
       Serial.println("Error setting up crane");
     }
-    
-    delay(1000);
 
     // Wait for the go button to be pressed
     waitForGo();
@@ -74,11 +74,12 @@ void loop() {
     elapsedMillis slowUpdateTimer = 0;
 
 	  while(running) {
+
         if (sensorUpdateTimer > 5) {
             sensors_update();
             sensorUpdateTimer = 0;
         }
-        
+
         // Update robot information
         if (robotInfoUpdateTimer > 100) {
             sensors_updateInfo(&robotInfo);
@@ -88,20 +89,17 @@ void loop() {
 
         
         // perform actions
-        if (PIDTimer > 1000) {
-            // findWeights(&robotInfo);
+        if (PIDTimer > 50) {
+            findWeights(&robotInfo);
             // motors_formShape(&robotInfo, 5000, 90);
             // motors_followHeading(&robotInfo, 0, 35);
-            crane_move_weight();
+            // crane_move_weight();
             
             PIDTimer = 0;
         }
 
         if (slowUpdateTimer > 100) {
-            char buffer[150];
-            sprintf(buffer, "IR T: %4d, B: %4d, M: %1d, IMU: %3d, %3d \n", robotInfo.IRTop_Distance, robotInfo.IRBottom_Distance, robotInfo.mode, robotInfo.IMU_Heading, robotInfo.targetHeading);
-
-            Serial1.write(buffer);
+            
             slowUpdateTimer = 0;
         }
 
@@ -111,4 +109,5 @@ void loop() {
 
     sensor_deInit();
     weightCollection_deInit(&robotInfo);
+    motors_deInit(&robotInfo);
 }

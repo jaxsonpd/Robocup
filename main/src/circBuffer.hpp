@@ -32,5 +32,6 @@ int32_t circBuffer_read(circBuffer_t *circBuffer);
 void circBuffer_write(circBuffer_t *circBuffer, int32_t value);
 void circBuffer_free(circBuffer_t *circBuffer);
 int32_t circBuffer_average(circBuffer_t *circBuffer);
+void circBuffer_clear(circBuffer_t *circBuffer);
 
 #endif // CIRC_BUFFER_H

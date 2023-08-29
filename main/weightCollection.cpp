@@ -18,15 +18,15 @@
 
 
 // ===================================== Types/Constants ==============================
-#define ROTATION_OFFSET 30
+#define ROTATION_SPEED 20
 #define MOVE_SPEED 30
-#define MOVE_TIME 3000
+#define MOVE_TIME 10000
 
 #define WEIGHT_DIFFERENCE_THRESHOLD 100
 #define WEIGHT_CLOSE_DISTANCE 100
-#define HEADING_THRESHOLD 2
+#define HEADING_THRESHOLD 8
 #define OBSTICAL_CLOSE_DISTANCE 300
-#define NUM_DETECTIONS 3 // Number of times the weight must be detected before it is collected
+#define NUM_DETECTIONS 2 // Number of times the weight must be detected before it is collected
 
 // ===================================== Globals ======================================
 enum states {
@@ -50,7 +50,7 @@ void findWeights(RobotInfo_t *robotInfo) {
     static uint8_t weightDetectionOccurances = 0; // Counter for weight detection 
 
     static int16_t weightHeading = 0; // Heading of the weight
-    static uint16_t weightDistance = 9000; // Distance of the weight
+    static uint16_t weightDistance = UINT16_MAX; // Distance of the weight
 
     static int16_t startHeading = 0; // Heading at start of rotation
 
@@ -62,13 +62,13 @@ void findWeights(RobotInfo_t *robotInfo) {
         case ROTATING: // Rotate on the spot and look for a weight
             if (firstRun) { // Setup the state
                 firstRun = false;
-                startHeading = robotInfo->IMU_Heading - 3; // Set the start heading to 2 degrees less than the current heading
+                startHeading = robotInfo->IMU_Heading - 10; // Set the start heading to 2 degrees less than the current heading
                 moveTimer = 0; // Reset the move timer
                 mostOpenDistance = 0;
             }
 
             // Check for weight
-            if ((robotInfo->IRTop_Distance > robotInfo->IRBottom_Distance) & (robotInfo->IRTop_Distance - robotInfo->IRBottom_Distance > WEIGHT_DIFFERENCE_THRESHOLD)) {
+            if ((robotInfo->IRTop_Distance > robotInfo->IRBottom_Distance) & ((robotInfo->IRTop_Distance - robotInfo->IRBottom_Distance) > WEIGHT_DIFFERENCE_THRESHOLD)) {
                 // Found a weight 
                 weightDetectionOccurances ++;
             } else {
@@ -88,14 +88,15 @@ void findWeights(RobotInfo_t *robotInfo) {
                 // Weight has been detected enough times so collect it
                 state = MOVE_TO_WEIGHT; // Move to the weight
                 firstRun = true;
-                weightHeading = robotInfo->IMU_Heading; // Set the weight heading
+                weightHeading = robotInfo->IMU_Heading+5; // Set the weight heading
                 weightDetectionOccurances = 0;
             } else if (abs(robotInfo->IMU_Heading - startHeading) < HEADING_THRESHOLD) {  // Check if we have rotated 360
                 // We have rotated 360
                 state = MOVE_TO_OPEN; // Move to the most open area
                 firstRun = true;
             } else {  // Rotate on the spot
-                motors_followHeading(robotInfo, robotInfo->IMU_Heading + ROTATION_OFFSET, 0);
+                motors_setLeft(ROTATION_SPEED);
+                motors_setRight(-ROTATION_SPEED);
             }
 
             break;
@@ -105,7 +106,6 @@ void findWeights(RobotInfo_t *robotInfo) {
                 moveTimer = 0;
                 firstRun = false;
             }
-
 
             // Update the state machine
             if (moveTimer > MOVE_TIME) { // Check if we have moved for long enough
@@ -128,7 +128,6 @@ void findWeights(RobotInfo_t *robotInfo) {
 
 
             // Update the state machine
-            
             if (robotInfo->IRBottom_Distance < WEIGHT_CLOSE_DISTANCE) { // Check if we are close to the weight
                 state = AT_WEIGHT; // We are at the weight
                 firstRun = true;
@@ -149,13 +148,16 @@ void findWeights(RobotInfo_t *robotInfo) {
             if (robotInfo->IRBottom_Distance > WEIGHT_CLOSE_DISTANCE) {
                 state = ROTATING; // Rotate on the spot
                 firstRun = true;
+            } else { // Hold Position
+                motors_setLeft(0);
+                motors_setRight(0);
             }
-
-            motors_followHeading(robotInfo, weightHeading, 0); // Hold position
             break;
 
 
     }
+
+    robotInfo->mode = state;
 }
 
 

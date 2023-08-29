@@ -32,21 +32,32 @@ void printRobotInfo(RobotInfo_t* robotInfo) {
     // Print the robot info
     char buffer[150];
 
-    sprintf(buffer, "M: L %2d%%, R %2d%%, US: L %4d mm, R %4d mm, IR: T %4d mm, B %4d mm, H %3d deg, SP %3d deg, %1d, M: %1d \n",
-        robotInfo->leftMotorSpeed,
-        robotInfo->rightMotorSpeed,
+    // sprintf(buffer, "M: L %2d%%, R %2d%%, US: L %4d mm, R %4d mm, IR: T %4d mm, B %4d mm, H %3d deg, SP %3d deg, %1d, M: %1d \n",
+    //     robotInfo->leftMotorSpeed,
+    //     robotInfo->rightMotorSpeed,
 
-        robotInfo->USLeft_Distance,
-        robotInfo->USRight_Distance,
+    //     robotInfo->USLeft_Distance,
+    //     robotInfo->USRight_Distance,
 
-        robotInfo->IRTop_Distance,
-        robotInfo->IRBottom_Distance,
+    //     robotInfo->IRTop_Distance,
+    //     robotInfo->IRBottom_Distance,
         
-        robotInfo->IMU_Heading,
-        robotInfo->targetHeading,
-        robotInfo->atHeading,
-        robotInfo->mode);
+    //     robotInfo->IMU_Heading,
+    //     robotInfo->targetHeading,
+    //     robotInfo->atHeading,
+    //     robotInfo->mode);
 
-    Serial.print(buffer);
+    // Serial.print(buffer);
+
+    Serial.print(robotInfo->IRTop_Distance);
+    Serial.print(", ");
+    Serial.print(robotInfo->IRBottom_Distance);
+    Serial.print(", ");
+    Serial.println(robotInfo->IMU_Heading);
+
+    char Serial1Buffer[150];
+    sprintf(Serial1Buffer, "IR T: %4d, B: %4d, M: %1d, IMU: %3d, %3d \n", robotInfo->IRTop_Distance, robotInfo->IRBottom_Distance, robotInfo->mode, robotInfo->IMU_Heading, robotInfo->targetHeading);
+
+    Serial1.write(Serial1Buffer);
     
 }  

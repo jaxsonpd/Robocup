@@ -12,6 +12,7 @@
 
 #include "motors.hpp"
 #include "robotInformation.hpp"
+#include "src/dcMotor.hpp"
 #include "src/circBuffer.hpp"
 
 #include <stdint.h>
@@ -24,14 +25,12 @@
 #define MOTOR_1_PIN 7
 #define MOTOR_2_PIN 8
 
-#define MOTOR_SPEED_MAX 100
-#define MOTOR_SPEED_MIN -100
-
-#define P_CONTROL_GAIN 65 //  /100
+#define P_CONTROL_GAIN 70 //  /100
 #define I_CONTROL_GAIN 20 //  /100
 #define D_CONTROL_GAIN 20 //  /100
+
 #define GAIN_SCALING 100
-#define ERROR_INT_MAX 500000 
+#define ERROR_INT_MAX 50000
 #define DERIVATIVE_OFFSET 1000
 #define DERIVATIVE_BUFFER_SIZE 3
 
@@ -45,14 +44,14 @@
 #define MS_TO_S 1000
 
 // ===================================== Objects ======================================
-Servo M1, M2; // Define the servo objects for each motor
+dcMotor leftMotor;
+dcMotor rightMotor;
+
 circBuffer_t* derivativeBuffer = new circBuffer_t[DERIVATIVE_BUFFER_SIZE];
 
 // ===================================== Globals ======================================
-// Variables used to update the robotInfo struct in motors_updateInfo()
-// int16_t motor1Speed = 0; // Speed of motor 1 (-100 to 100)
-// int16_t motor2Speed = 0; // Speed of motor 2 (-100 to 100)
-// int16_t headingSP = 0;
+static int32_t intergralError = 0; // The integral of the error
+static int32_t previousError = 0; // The previous error
 
 // ===================================== Function Definitions =========================
 /**
@@ -62,48 +61,19 @@ circBuffer_t* derivativeBuffer = new circBuffer_t[DERIVATIVE_BUFFER_SIZE];
  */
 bool motors_setup(void) {
     // Attach the motors to each servo object
-    M1.attach(MOTOR_1_PIN);
-    M2.attach(MOTOR_2_PIN);
+    if (!leftMotor.init(MOTOR_1_PIN, 0)) {
+        Serial.println("Failed to initialise left motor!");
+        return 1;
+    }
+
+    if (!rightMotor.init(MOTOR_2_PIN, 1)) {
+        Serial.println("Failed to initialise right motor!");
+        return 1;
+    }
 
     circBuffer_init(derivativeBuffer, DERIVATIVE_BUFFER_SIZE);
 
     return 0;
-}
-
-/**
- * @brief Set the speed of a motor
- * 
- * @param motor The motor to set the speed of
- * @param speed The speed to set the motor to
- * 
- * @return success (0) or failure (1)
- */
-bool motors_setSpeed(uint8_t selectedMotor, int8_t speed) {
-    int16_t proccessedSpeed = 0; // The speed to set the motor to
-    bool inBound = true;
-
-    // Check to see if the speed is in range
-    if (speed > MOTOR_SPEED_MAX || speed < MOTOR_SPEED_MIN) {
-        inBound = false;
-        speed = (speed > MOTOR_SPEED_MAX) ? MOTOR_SPEED_MAX : speed;
-        speed = (speed < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : speed;
-    }
-
-    // Invert motor 2 speed
-    proccessedSpeed = (selectedMotor == MOTOR_1) ? -speed : speed;
-
-    // Convert the speed to 1050-1950
-    proccessedSpeed = map(proccessedSpeed, MOTOR_SPEED_MIN, MOTOR_SPEED_MAX, 1050, 1950);
-
-    // Set the speed of the motor
-    if (selectedMotor == MOTOR_1) {
-        M1.writeMicroseconds(proccessedSpeed);
-    } else if (selectedMotor == MOTOR_2) {
-        M2.writeMicroseconds(proccessedSpeed);
-    } else {
-        return 1;
-    }
-    return inBound;
 }
 
 
@@ -116,8 +86,6 @@ bool motors_setSpeed(uint8_t selectedMotor, int8_t speed) {
  */
 static int16_t calcControlValue(int16_t setpoint, int16_t heading) {
     // Variables
-    static int32_t intergralError = 0; // The integral of the error
-    static int32_t previousError = 0; // The previous error
     static elapsedMillis deltaT = 0; // The time since the last calculation
     
     // Calculate the error and bound it
@@ -178,6 +146,7 @@ static int16_t calcControlValue(int16_t setpoint, int16_t heading) {
  * @param headingSetpoint The heading setpoint to follow
  * @param forwardSpeed The speed to move at (0 is rotate on the spot, 100 is full speed)
  * 
+ * @return true if at setpoint
  */
 bool motors_followHeading(RobotInfo_t* robotInfo, int16_t headingSetpoint, int16_t forwardSpeed) {
     // Variables
@@ -199,15 +168,13 @@ bool motors_followHeading(RobotInfo_t* robotInfo, int16_t headingSetpoint, int16
     motor2SpeedRaw = (motor2SpeedRaw < MOTOR_SPEED_MIN) ? MOTOR_SPEED_MIN : motor2SpeedRaw;
 
     // Set the motor speeds
-    motors_setSpeed(MOTOR_1, motor1SpeedRaw);
-    motors_setSpeed(MOTOR_2, motor2SpeedRaw);
+    leftMotor.setSpeed(motor1SpeedRaw);
+    rightMotor.setSpeed(motor2SpeedRaw);
 
-    // Update the robotInfo struct
-    robotInfo->leftMotorSpeed = motor1SpeedRaw;
-    robotInfo->rightMotorSpeed = motor2SpeedRaw;
-    robotInfo->targetHeading = headingSetpoint;
+    robotInfo->leftMotorSpeed = leftMotor.getSpeed();
+    robotInfo->rightMotorSpeed = rightMotor.getSpeed();
 
-    // Check to see if the robot is at the setpoint
+    // Check to see if the robot is at the setpoint !! Depreciated
     static elapsedMillis timeAtSetpoint = 0;
 
     if (abs(robotInfo->targetHeading - robotInfo->IMU_Heading) <= SETPOINT_TOLERANCE) {
@@ -219,48 +186,104 @@ bool motors_followHeading(RobotInfo_t* robotInfo, int16_t headingSetpoint, int16
         timeAtSetpoint = 0;
     }
 
+    robotInfo->targetHeading = headingSetpoint;
     return robotInfo->atHeading;
 }
 
-
-/** 
- * @brief Make the robot move in a shape
- * @param robotInfo the robot information struct
- * @param sideLength the lenght in seconds of each side to complete
- * @param rotationAngle the angle to rotate at each corner
+/**
+ * @brief De initialise the motors
+ * @param robotInfo The robotInfo struct to update
  * 
- * @return 0 if at setpoint, 1 if not at setpoint
  */
-bool motors_formShape(RobotInfo_t *robotInfo, uint32_t sideLenght, int16_t rotationAngle) {
-    static uint8_t state = 0;
-    static elapsedMillis timeAtState;
-    static int16_t targetHeading = 0;
-    bool atSetpoint = 0;
+void motors_deInit(RobotInfo_t* robotInfo) {
+    leftMotor.setSpeed(0);
+    rightMotor.setSpeed(0);
 
-    switch (state) {
-        case 0: // Move forward
-            atSetpoint = motors_followHeading(robotInfo, targetHeading, 30);
-            if (timeAtState > sideLenght) {
-                state = 1;
-                timeAtState = 0;
-                targetHeading += rotationAngle;
+    robotInfo->leftMotorSpeed = 0;
+    robotInfo->rightMotorSpeed = 0;
+    robotInfo->targetHeading = 0;
+    robotInfo->atHeading = false;
 
-                if (targetHeading > MAX_HEADING) {
-                    targetHeading -= 360;
-                }
-            }
-            break;
-        case 1: // Turn 90 degrees
-            atSetpoint = motors_followHeading(robotInfo, targetHeading, 0);
-            if (atSetpoint == 0) {
-                state = 0;
-                timeAtState = 0;
-            }
-            break;
+    if (!leftMotor.deInit()) {
+        Serial.println("Failed to de-initialise left motor!");
+        return 0;
     }
 
-    return atSetpoint;
+    if (!rightMotor.deInit()) {
+        Serial.println("Failed to de-initialise right motor!");
+        return 0;
+    }
+
+    delete derivativeBuffer;
+
+    intergralError = 0;
+    previousError = 0;
 }
 
 
+/**
+ * @brief Clear the integral and derivative errors
+ * 
+ */
+void motors_clearErrors(void) {
+    intergralError = 0;
+    previousError = 0;
+    circBuffer_clear(derivativeBuffer);
+}
 
+
+/**
+ * @brief Control the left motor directly
+ * @param speed the speed to set the left motor
+ */
+void motors_setLeft(int16_t speed) {
+    leftMotor.setSpeed(speed);
+}
+
+/**
+ * @brief Control the left motor directly
+ * @param speed the speed to set the left motor
+ */
+void motors_setRight(int16_t speed) {
+    rightMotor.setSpeed(speed);
+}
+
+
+// /** 
+//  * @brief Make the robot move in a shape
+//  * @param robotInfo the robot information struct
+//  * @param sideLength the lenght in seconds of each side to complete
+//  * @param rotationAngle the angle to rotate at each corner
+//  * 
+//  * @return 0 if at setpoint, 1 if not at setpoint
+//  */
+// bool motors_formShape(RobotInfo_t *robotInfo, uint32_t sideLenght, int16_t rotationAngle) {
+//     static uint8_t state = 0;
+//     static elapsedMillis timeAtState;
+//     static int16_t targetHeading = 0;
+//     bool atSetpoint = 0;
+
+//     switch (state) {
+//         case 0: // Move forward
+//             atSetpoint = motors_followHeading(robotInfo, targetHeading, 30);
+//             if (timeAtState > sideLenght) {
+//                 state = 1;
+//                 timeAtState = 0;
+//                 targetHeading += rotationAngle;
+
+//                 if (targetHeading > MAX_HEADING) {
+//                     targetHeading -= 360;
+//                 }
+//             }
+//             break;
+//         case 1: // Turn 90 degrees
+//             atSetpoint = motors_followHeading(robotInfo, targetHeading, 0);
+//             if (atSetpoint == 0) {
+//                 state = 0;
+//                 timeAtState = 0;
+//             }
+//             break;
+//     }
+
+//     return atSetpoint;
+// }
