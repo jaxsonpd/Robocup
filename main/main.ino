@@ -75,7 +75,7 @@ void loop() {
 
 	  while(running) {
 
-        if (sensorUpdateTimer > 5) {
+        if (sensorUpdateTimer > 20) {
             sensors_update();
             sensorUpdateTimer = 0;
         }
@@ -98,13 +98,13 @@ void loop() {
             PIDTimer = 0;
         }
 
-        if (slowUpdateTimer > 100) {
-            
+        if (slowUpdateTimer > 500) {
+            // Check if the robot should keep running
+            running = checkStopped();
             slowUpdateTimer = 0;
         }
 
-        // Check if the robot should keep running
-        running = checkStopped();
+
 	  }
 
     sensor_deInit();

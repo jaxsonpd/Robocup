@@ -26,7 +26,7 @@
 #define WEIGHT_CLOSE_DISTANCE 100
 #define HEADING_THRESHOLD 8
 #define OBSTICAL_CLOSE_DISTANCE 300
-#define NUM_DETECTIONS 2 // Number of times the weight must be detected before it is collected
+#define NUM_DETECTIONS 3 // Number of times the weight must be detected before it is collected
 
 // ===================================== Globals ======================================
 enum states {
@@ -68,7 +68,9 @@ void findWeights(RobotInfo_t *robotInfo) {
             }
 
             // Check for weight
-            if ((robotInfo->IRTop_Distance > robotInfo->IRBottom_Distance) & ((robotInfo->IRTop_Distance - robotInfo->IRBottom_Distance) > WEIGHT_DIFFERENCE_THRESHOLD)) {
+            if ((robotInfo->IRTop_Distance > robotInfo->IRBottom_Distance) 
+                & ((robotInfo->IRTop_Distance - robotInfo->IRBottom_Distance) > WEIGHT_DIFFERENCE_THRESHOLD)
+                & (robotInfo->IRBottom_Distance < 1000)) {
                 // Found a weight 
                 weightDetectionOccurances ++;
             } else {
@@ -90,6 +92,8 @@ void findWeights(RobotInfo_t *robotInfo) {
                 firstRun = true;
                 weightHeading = robotInfo->IMU_Heading+5; // Set the weight heading
                 weightDetectionOccurances = 0;
+                Serial.print("Detected at: ");
+                Serial.println(weightHeading);
             } else if (abs(robotInfo->IMU_Heading - startHeading) < HEADING_THRESHOLD) {  // Check if we have rotated 360
                 // We have rotated 360
                 state = MOVE_TO_OPEN; // Move to the most open area

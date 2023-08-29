@@ -35,7 +35,7 @@
 
 // Buffer sizes for sensor readings
 #define BUFFER_SIZE 8
-#define IRTOF_BUFFER_SIZE 1
+#define IRTOF_BUFFER_SIZE 3
 
 #define SX1509_ADDRESS 0x3F // TOF IO expander address
 
