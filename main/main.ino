@@ -24,6 +24,12 @@
 // ===================================== Constants ====================================
 #define SERIAL_BAUD_RATE 115200
 
+// Scheduler constants
+#define SENSOR_UPDATE_TIME 20
+#define ROBOT_INFO_UPDATE_TIME 100
+#define FSM_UPDATE_TIME 50
+#define SLOW_UPDATE_TIME 500
+
 
 // ===================================== Globals ======================================
 bool running = true; // Whether the robot is running or not
@@ -66,22 +72,21 @@ void robot_setup() {
 void setup() {} // Keep the Arduino IDE happy
 
 void loop() {
-	  robot_setup();
+	robot_setup();
 
     elapsedMillis sensorUpdateTimer = 0;
     elapsedMillis robotInfoUpdateTimer = 0;
-    elapsedMillis PIDTimer = 0;
+    elapsedMillis FSMTimer = 0;
     elapsedMillis slowUpdateTimer = 0;
 
-	  while(running) {
-
-        if (sensorUpdateTimer > 20) {
+	while(running) {
+        if (sensorUpdateTimer > SENSOR_UPDATE_TIME) {
             sensors_update();
             sensorUpdateTimer = 0;
         }
 
         // Update robot information
-        if (robotInfoUpdateTimer > 100) {
+        if (robotInfoUpdateTimer > ROBOT_INFO_UPDATE_TIME) {
             sensors_updateInfo(&robotInfo);
             printRobotInfo(&robotInfo);
             robotInfoUpdateTimer = 0;
@@ -89,22 +94,20 @@ void loop() {
 
         
         // perform actions
-        if (PIDTimer > 50) {
+        if (FSMTimer > FSM_UPDATE_TIME) {
             findWeights(&robotInfo);
             // motors_formShape(&robotInfo, 5000, 90);
             // motors_followHeading(&robotInfo, 0, 35);
             // crane_move_weight();
             
-            PIDTimer = 0;
+            FSMTimer = 0;
         }
 
-        if (slowUpdateTimer > 500) {
+        if (slowUpdateTimer > SLOW_UPDATE_TIME) {
             // Check if the robot should keep running
             running = checkStopped();
             slowUpdateTimer = 0;
         }
-
-
 	  }
 
     sensor_deInit();

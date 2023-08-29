@@ -17,6 +17,7 @@
 
 // ===================================== Types/Constants ==============================
 #define ADDRESS_DEFAULT 0b0101001 // Defult IR TOF Address
+#define MAX_DISTANCE 2000
 
 // ===================================== Globals ======================================
 
@@ -69,7 +70,11 @@ void IRTOF1::deInit(void) {
  * 
  */
 void IRTOF1::update(void) {
-    circBuffer_write(distanceBuffer, sensor.read(false));
+    uint32_t distance = sensor.read(false);
+    if (distance > MAX_DISTANCE) {
+        distance = MAX_DISTANCE;
+    }
+    circBuffer_write(distanceBuffer, distance);
 }
 
 
