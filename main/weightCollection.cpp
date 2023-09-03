@@ -42,6 +42,25 @@ enum states {
 static uint8_t state = ROTATING;
 
 // ===================================== Function Definitions =========================
+/** 
+ * @brief Check to see if a weight has been detected
+ * @param topDistance distance read from the top sensor
+ * @param bottomDistance distance read from the bottom sensor
+ * 
+ * @return true if a weight has been detected
+ */
+static bool weightDetected(uint32_t topDistance, uint32_t bottomDistance) {
+    if (topDistance > bottomDistance) { // Sensors are correct 
+        if ((topDistance - bottomDistance) > WEIGHT_DIFFERENCE_THRESHOLD) { // Weight detected
+            if (bottomDistance < MAX_DETECTION_RANGE) { // Within detection range
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 /**
  * @brief Find weights and collect them
  * @param robotInfo the robot information struct
@@ -71,14 +90,7 @@ void findWeights(RobotInfo_t *robotInfo) {
             }
 
             // Check for weight
-            if ((robotInfo->IRTop_Distance > robotInfo->IRBottom_Distance) 
-                & ((robotInfo->IRTop_Distance - robotInfo->IRBottom_Distance) > WEIGHT_DIFFERENCE_THRESHOLD)
-                & (robotInfo->IRBottom_Distance < MAX_DETECTION_RANGE)) {
-                // Found a weight 
-                weightDetectionOccurances ++;
-            } else {
-                weightDetectionOccurances = 0;
-            }
+            weightDetectionOccurances = weightDetected(robotInfo->IRTop_Distance, robotInfo->IRBottom_Distance) ? weightDetectionOccurances + 1 : 0;
 
 
             // Update the most open area heading
@@ -98,7 +110,6 @@ void findWeights(RobotInfo_t *robotInfo) {
 
                 Serial.print("Detected at: ");
                 Serial.println(weightHeading);
-
             } else if (abs(robotInfo->IMU_Heading - startHeading) < HEADING_THRESHOLD) {  // Check if we have rotated 360
                 // We have rotated 360
                 state = MOVE_TO_OPEN; // Move to the most open area
