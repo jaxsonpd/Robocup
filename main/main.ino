@@ -27,7 +27,7 @@
 // Scheduler constants
 #define SENSOR_UPDATE_TIME 20
 #define ROBOT_INFO_UPDATE_TIME 100
-#define FSM_UPDATE_TIME 50
+#define FSM_UPDATE_TIME 2000
 #define SLOW_UPDATE_TIME 500
 
 
@@ -60,6 +60,9 @@ void robot_setup() {
       Serial.println("Error setting up crane");
     }
 
+    Serial.println("Initialising weight collection");
+    returnToBase_init(&robotInfo);
+
     // Wait for the go button to be pressed
     waitForGo();
     Serial.println("Go button pressed, starting robot");
@@ -88,6 +91,7 @@ void loop() {
         // Update robot information
         if (robotInfoUpdateTimer > ROBOT_INFO_UPDATE_TIME) {
             sensors_updateInfo(&robotInfo);
+            motors_update(&robotInfo);
             printRobotInfo(&robotInfo);
             robotInfoUpdateTimer = 0;
         }
@@ -95,10 +99,11 @@ void loop() {
         
         // perform actions
         if (FSMTimer > FSM_UPDATE_TIME) {
-            findWeights(&robotInfo);
+            // findWeights(&robotInfo);
             // motors_formShape(&robotInfo, 5000, 90);
             // motors_followHeading(&robotInfo, 0, 35);
-            // crane_move_weight();
+            crane_move_weight();
+            // returnToBase(&robotInfo);
             
             FSMTimer = 0;
         }

@@ -14,9 +14,9 @@
 #define SERVO_2_PIN 28
 #define ELECTROMAGNET_PIN 20
 
-#define RELEASE_ANGLE 180
-#define COLLECT_ANGLE 0
-#define STANDBY_ANGLE 90
+#define RELEASE_ANGLE 140
+#define COLLECT_ANGLE 15
+#define STANDBY_ANGLE 100
 
 enum states {
   collect = 0,

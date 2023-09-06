@@ -121,24 +121,18 @@ bool sensors_init(void) {
 
     io.begin(SX1509_ADDRESS);
 
-    Serial.println("External IO init");
 
     // Initialise the IMU
     if(!bno.begin()) {
         return 1;
     }
 
-    Serial.println("IMU on");
-
     // Initialise the ultrasonic sensors
     init_USTOF();
 
-    Serial.println("US on");
-    
     // Initailise the IR TOF sensors
     init_IRTOF();
 
-    Serial.println("IRTOF on");
 
     // Initialise the buffers
     circBuffer_init(us0Buffer, BUFFER_SIZE);

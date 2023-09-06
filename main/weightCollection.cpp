@@ -90,7 +90,8 @@ void findWeights(RobotInfo_t *robotInfo) {
             }
 
             // Check for weight
-            weightDetectionOccurances = weightDetected(robotInfo->IRTop_Distance, robotInfo->IRBottom_Distance) ? weightDetectionOccurances + 1 : 0;
+            weightDetectionOccurances = weightDetected(robotInfo->IRTop_Distance, robotInfo->IRBottom_Distance) 
+                	                    ? weightDetectionOccurances + 1 : 0;
 
 
             // Update the most open area heading
