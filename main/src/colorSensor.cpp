@@ -28,6 +28,20 @@ uint16_t b_base = 0;
 
 // ===================================== Function Definitions =========================
 
+
+/**
+ * @brief Set the base color
+ * 
+ */
+void colorSensor_setBase() {
+    uint16_t c;
+    tcs.setInterrupt(false);      // turn on LED
+    delay(60);  // takes 50ms to read
+    tcs.getRawData(&r_base, &g_base, &b_base, &c);
+    tcs.setInterrupt(true);  // turn off LED
+}
+
+
 /**
  * @brief Initialize the color sensor
  * 
@@ -70,17 +84,4 @@ bool colorSensor_overBase() {
     }
 
     return false;
-}
-
-
-/**
- * @brief Set the base color
- * 
- */
-void colorSensor_setBase() {
-    uint16_t c;
-    tcs.setInterrupt(false);      // turn on LED
-    delay(60);  // takes 50ms to read
-    tcs.getRawData(&r_base, &g_base, &b_base, &c);
-    tcs.setInterrupt(true);  // turn off LED
 }

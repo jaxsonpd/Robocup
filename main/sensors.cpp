@@ -214,6 +214,7 @@ void sensors_update(void) {
     // Update IR TOF sensors
     irTOF0.update();
     irTOF1.update();
+    Serial.println();
 }
 
     

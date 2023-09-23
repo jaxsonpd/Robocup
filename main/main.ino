@@ -72,6 +72,76 @@ void robot_setup() {
 }
 
 
+/**
+ * @Brief Monitor the robots movements and get it unstuck if it gets stuck
+ * @param robotInfo Pointer to the robotInfo struct 
+ *
+ * @return true if the robot is stuck
+ */
+ void watchDog(robotInfo* robotInfo) {
+    // Check if the robot is trying to go forward but is not moving
+
+    // Check if the robot is trying to rotate but is not moving
+ }
+
+
+
+
+enum FSMStates {
+    FIND_WEIGHTS,
+    RETURN_HOME,
+    WATCH_DOG
+};
+
+/**
+ * @Breif Update the finite state machine that controls the robots behavour
+ * @param robotInfo Pointer to the robotInfo struct
+ */
+void FSM(robotInfo* robotInfo) {
+    static uint8_t state = 0;
+    static firstRun = true;
+    static prevousStateWatchDog = FIND_WEIGHTS; // The state the robot was in before the watchdog was triggered
+
+    switch (state) {
+        case FIND_WEIGHTS:
+            if (firstRun) {
+                firstRun = false;
+            }
+
+            findWeights(robotInfo);
+            break;
+        case RETURN_HOME:
+            if (firstRun) {
+                firstRun = false;
+            }
+
+            returnToBase(robotInfo);
+            break;
+        case WATCH_DOG:
+            if (firstRun) {
+                firstRun = false;
+            }
+
+            // Do nothing and let the watch dog do its thing
+            if (!watchDog(robotInfo)) {
+                state = prevousStateWatchDog;
+            }
+            break;
+    }
+
+    // Check the robots watch dog
+    if (state != WATCH_DOG) {
+        if (watchDog(robotInfo)) {
+            prevousStateWatchDog = state;
+            state = WATCH_DOG;
+            firstRun = true;
+        }
+    }
+}
+
+
+
+
 void setup() {} // Keep the Arduino IDE happy
 
 void loop() {
@@ -92,7 +162,7 @@ void loop() {
         if (robotInfoUpdateTimer > ROBOT_INFO_UPDATE_TIME) {
             sensors_updateInfo(&robotInfo);
             motors_update(&robotInfo);
-            printRobotInfo(&robotInfo);
+            // printRobotInfo(&robotInfo);
             robotInfoUpdateTimer = 0;
         }
 
@@ -104,6 +174,8 @@ void loop() {
             // motors_followHeading(&robotInfo, 0, 35);
             // crane_move_weight();
             // returnToBase(&robotInfo);
+            motors_setLeft(40);
+            motors_setRight(40);
             
             FSMTimer = 0;
         }
