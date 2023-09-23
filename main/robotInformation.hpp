@@ -35,10 +35,14 @@ typedef struct {
     // IMU
     int16_t IMU_Heading; // IMU heading in degrees
     int16_t targetHeading; // Target heading in degrees
-    bool atHeading;
+    int16_t fowardAcceleration; // Forward acceleration in m/s^2
+    int16_t rotationAcceleration; // Rotation acceleration in m/s^2
 
     // General Info
+    bool atHeading; // Whether the robot is at the target heading for more then 100ms
     uint8_t mode; // Current mode the robot is in
+    uint8_t weightsOnBoard; // Number of weights on board
+
 } RobotInfo_t;
 
 

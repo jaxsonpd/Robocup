@@ -30,6 +30,18 @@
 #define FSM_UPDATE_TIME 2000
 #define SLOW_UPDATE_TIME 500
 
+// Watchdog constants
+#define REVERSE_TIME 1000 // Time to reverse for when the watchdog is triggered
+#define FORWARD_THRESHOLD 10 // Threshold for when the robot is considered to be moving forward
+#define ROTATION_THRESHOLD 10 // Threshold for difference in speeds when the robot is considered to be rotating
+#define REVERSE_THRESHOLD -10 // Threshold for when the robot is considered to be moving backwards
+
+// FSM constants
+enum FSMStates {
+    FIND_WEIGHTS,
+    RETURN_HOME,
+    WATCH_DOG
+};
 
 // ===================================== Globals ======================================
 bool running = true; // Whether the robot is running or not
@@ -76,22 +88,32 @@ void robot_setup() {
  * @Brief Monitor the robots movements and get it unstuck if it gets stuck
  * @param robotInfo Pointer to the robotInfo struct 
  *
- * @return true if the robot is stuck
+ * @return > 0 if the robot is stuck (1 = Forward Blocked, 2 = Rotation Blocked, 3 = Reveresed Blocked, 4 = B)
  */
- void watchDog(robotInfo* robotInfo) {
+uint8_t watchDog(robotInfo* robotInfo) {
     // Check if the robot is trying to go forward but is not moving
+    if (robotInfo->leftMotorSpeed + robotInfo->rightMotorSpeed > FORWARD_THRESHOLD) {
+        if (/* IMU forward axis == 0*/) {
+            return 1;
+        }
+    }
 
     // Check if the robot is trying to rotate but is not moving
- }
+    if (abs(robotInfo->leftMotorSpeed - robotInfo->rightMotorSpeed) > ROTATION_THRESHOLD) {
+        if (/* IMU rotation axis == 0*/) {
+            return 2;
+        }
+    }
 
+    // Check if the robot is trying to reverse but is not moving
+    if (robotInfo->leftMotorSpeed + robotInfo->rightMotorSpeed < REVERSE_THRESHOLD) {
+        if (/* IMU forward axis == 0*/) {
+            return 3;
+        }
+    }
 
-
-
-enum FSMStates {
-    FIND_WEIGHTS,
-    RETURN_HOME,
-    WATCH_DOG
-};
+    return 0;
+}
 
 /**
  * @Breif Update the finite state machine that controls the robots behavour
@@ -101,6 +123,7 @@ void FSM(robotInfo* robotInfo) {
     static uint8_t state = 0;
     static firstRun = true;
     static prevousStateWatchDog = FIND_WEIGHTS; // The state the robot was in before the watchdog was triggered
+    static elapsedMillis stateTimer = 0;
 
     switch (state) {
         case FIND_WEIGHTS:
@@ -108,23 +131,36 @@ void FSM(robotInfo* robotInfo) {
                 firstRun = false;
             }
 
-            findWeights(robotInfo);
+            if (robotInfo->weightsOnBoard == 3) {
+                state = RETURN_HOME;
+                firstRun = true;
+            } else {
+                findWeights(robotInfo);
+            }
+
             break;
         case RETURN_HOME:
             if (firstRun) {
                 firstRun = false;
             }
 
-            returnToBase(robotInfo);
+            if (returnToBase(robotInfo)) {
+                state = FIND_WEIGHTS;
+                firstRun = true;
+            }
             break;
         case WATCH_DOG:
             if (firstRun) {
                 firstRun = false;
+                stateTimer = 0;
             }
 
-            // Do nothing and let the watch dog do its thing
-            if (!watchDog(robotInfo)) {
+            if (stateTimer > REVERSE_TIME) {
                 state = prevousStateWatchDog;
+                firstRun = true;
+            } else {
+                motors_setLeft(50);
+                motors_setRight(50);
             }
             break;
     }
@@ -138,9 +174,6 @@ void FSM(robotInfo* robotInfo) {
         }
     }
 }
-
-
-
 
 void setup() {} // Keep the Arduino IDE happy
 
