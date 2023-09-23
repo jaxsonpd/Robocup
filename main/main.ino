@@ -31,8 +31,6 @@
 #define SLOW_UPDATE_TIME 500
 
 // Watchdog constants
-#define REVERSE_TIME 1000 // Time to reverse for when the watchdog is triggered
-
 #define FORWARD_SPEED_THRESHOLD 10 // Threshold for when the robot is considered to be moving forward
 #define ROTATION_SPEED_THRESHOLD 10 // Threshold for difference in speeds when the robot is considered to be rotating
 #define REVERSE_SPEED_THRESHOLD -10 // Threshold for when the robot is considered to be moving backwards
@@ -46,6 +44,10 @@ enum FSMStates {
     RETURN_HOME,
     WATCH_DOG
 };
+
+#define REVERSE_TIME 1000 // Time to reverse for when the watchdog is triggered
+#define REVERSE_SPEED -50 // Speed to reverse at when the watchdog is triggered
+
 
 // ===================================== Globals ======================================
 bool running = true; // Whether the robot is running or not
@@ -163,8 +165,8 @@ void FSM(robotInfo* robotInfo) {
                 state = prevousStateWatchDog;
                 firstRun = true;
             } else {
-                motors_setLeft(50);
-                motors_setRight(50);
+                motors_setLeft(REVERSE_SPEED);
+                motors_setRight(REVERSE_SPEED);
             }
             break;
     }
