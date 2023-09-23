@@ -56,6 +56,8 @@ uint16_t* usDistances = new uint16_t[US_NUM]; // Array of computed distances
 circBuffer_t* us0Buffer = new circBuffer_t[BUFFER_SIZE]; // Left US
 circBuffer_t* us1Buffer = new circBuffer_t[BUFFER_SIZE]; // Right US
 circBuffer_t* headingBuffer = new circBuffer_t[BUFFER_SIZE];
+circBuffer_t* forwardAccelerationBuffer = new circBuffer_t[BUFFER_SIZE];
+circBuffer_t* rotationAccelerationBuffer = new circBuffer_t[BUFFER_SIZE];
 
 // create IR TOF sensor objects
 IRTOF1 irTOF0;
@@ -139,6 +141,7 @@ bool sensors_init(void) {
     circBuffer_init(us1Buffer, BUFFER_SIZE);
     circBuffer_init(headingBuffer, BUFFER_SIZE);
 
+
     return 0;
 }
 
@@ -154,6 +157,7 @@ void sensor_deInit(void) {
     io.digitalWrite(IRTOF_1_XSHUT_PIN, LOW); 
 }
 
+// ++++++++++++++++++++++++++++++++++++++ Sensor Functions ++++++++++++++++++++++++++++++++++++++
 
 /** 
  * @brief Get the current heading of the robot
@@ -182,6 +186,28 @@ static int16_t getHeading(void) {
 }
 
 
+/**
+ * @brief get the forward acceleration of the robot
+ *
+ * @return the forward acceleration in m/s^2
+ */
+static int16_t getForwardAcceleration(void) {
+    imu::Vector<3> acceleration = bno.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
+    return acceleration.x();
+}
+
+/**
+ * @brief get the rotation acceleration of the robot
+ *
+ * @return the rotation acceleration in m/s^2
+ */
+static int16_t getRotationAcceleration(void) {
+    imu::Vector<3> acceleration = bno.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
+    return acceleration.z();
+}
+
+// ++++++++++++++++++++++++++++++++++++++ Sensor Update Functions ++++++++++++++++++++++++++++++++++++++
+
 /** 
  * @brief Update the robot info struct with the sensor data
  * @param robotInfo The robot info struct to update
@@ -191,6 +217,8 @@ void sensors_updateInfo(RobotInfo_t* robotInfo) {
     robotInfo->IMU_Heading = circBuffer_average(headingBuffer);
     robotInfo->USLeft_Distance = circBuffer_average(us0Buffer);
     robotInfo->USRight_Distance= circBuffer_average(us1Buffer);
+    robotInfo->forwardAcceleration = circBuffer_average(forwardAccelerationBuffer);
+    robotInfo->rotationAcceleration = circBuffer_average(rotationAccelerationBuffer);
     robotInfo->IRTop_Distance = irTOF0.getDistance();
     robotInfo->IRBottom_Distance = irTOF1.getDistance();
 }
@@ -209,7 +237,10 @@ void sensors_update(void) {
     // Update Buffers
     circBuffer_write(us0Buffer, usDistances[0]);
     circBuffer_write(us1Buffer, usDistances[1]);
+
     circBuffer_write(headingBuffer, getHeading());
+    circBuffer_write(forwardAccelerationBuffer, getForwardAcceleration());
+    circBuffer_write(rotationAccelerationBuffer, getRotationAcceleration());
 
     // Update IR TOF sensors
     irTOF0.update();

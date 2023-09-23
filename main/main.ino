@@ -32,9 +32,13 @@
 
 // Watchdog constants
 #define REVERSE_TIME 1000 // Time to reverse for when the watchdog is triggered
-#define FORWARD_THRESHOLD 10 // Threshold for when the robot is considered to be moving forward
-#define ROTATION_THRESHOLD 10 // Threshold for difference in speeds when the robot is considered to be rotating
-#define REVERSE_THRESHOLD -10 // Threshold for when the robot is considered to be moving backwards
+
+#define FORWARD_SPEED_THRESHOLD 10 // Threshold for when the robot is considered to be moving forward
+#define ROTATION_SPEED_THRESHOLD 10 // Threshold for difference in speeds when the robot is considered to be rotating
+#define REVERSE_SPEED_THRESHOLD -10 // Threshold for when the robot is considered to be moving backwards
+
+#define FOWARD_ACC_THRESHOLD 10 // Threshold for when the robot is considered to be accelerating forward
+#define ROTATION_ACC_THRESHOLD 10 // Threshold for when the robot is considered to be accelerating rotation
 
 // FSM constants
 enum FSMStates {
@@ -92,22 +96,22 @@ void robot_setup() {
  */
 uint8_t watchDog(robotInfo* robotInfo) {
     // Check if the robot is trying to go forward but is not moving
-    if (robotInfo->leftMotorSpeed + robotInfo->rightMotorSpeed > FORWARD_THRESHOLD) {
-        if (/* IMU forward axis == 0*/) {
+    if (robotInfo->leftMotorSpeed + robotInfo->rightMotorSpeed > FORWARD_SPEED_THRESHOLD) {
+        if (abs(robotInfo->fowardAcceleration) < FOWARD_ACC_THRESHOLD) {
             return 1;
         }
     }
 
     // Check if the robot is trying to rotate but is not moving
     if (abs(robotInfo->leftMotorSpeed - robotInfo->rightMotorSpeed) > ROTATION_THRESHOLD) {
-        if (/* IMU rotation axis == 0*/) {
+        if (abs(robotInfo->rotationAcceleration) < ROTATION_ACC_THRESHOLD) {
             return 2;
         }
     }
 
     // Check if the robot is trying to reverse but is not moving
     if (robotInfo->leftMotorSpeed + robotInfo->rightMotorSpeed < REVERSE_THRESHOLD) {
-        if (/* IMU forward axis == 0*/) {
+        if (abs(robotInfo->fowardAcceleration) < FOWARD_ACC_THRESHOLD) {
             return 3;
         }
     }
