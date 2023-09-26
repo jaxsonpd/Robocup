@@ -35,8 +35,8 @@ typedef struct {
     // IMU
     int16_t IMU_Heading; // IMU heading in degrees
     int16_t targetHeading; // Target heading in degrees
-    int16_t fowardAcceleration; // Forward acceleration in m/s^2
-    int16_t rotationAcceleration; // Rotation acceleration in m/s^2
+    double forwardAcceleration; // Forward acceleration in m/s^2
+    double rotationAcceleration; // Rotation acceleration in m/s^2
 
     // General Info
     bool atHeading; // Whether the robot is at the target heading for more then 100ms

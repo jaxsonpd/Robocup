@@ -191,7 +191,7 @@ static int16_t getHeading(void) {
  *
  * @return the forward acceleration in m/s^2
  */
-static int16_t getForwardAcceleration(void) {
+static double getForwardAcceleration(void) {
     imu::Vector<3> acceleration = bno.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
     return acceleration.x();
 }
@@ -201,7 +201,7 @@ static int16_t getForwardAcceleration(void) {
  *
  * @return the rotation acceleration in m/s^2
  */
-static int16_t getRotationAcceleration(void) {
+static double getRotationAcceleration(void) {
     imu::Vector<3> acceleration = bno.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
     return acceleration.z();
 }
@@ -217,8 +217,8 @@ void sensors_updateInfo(RobotInfo_t* robotInfo) {
     robotInfo->IMU_Heading = circBuffer_average(headingBuffer);
     robotInfo->USLeft_Distance = circBuffer_average(us0Buffer);
     robotInfo->USRight_Distance= circBuffer_average(us1Buffer);
-    robotInfo->forwardAcceleration = circBuffer_average(forwardAccelerationBuffer);
-    robotInfo->rotationAcceleration = circBuffer_average(rotationAccelerationBuffer);
+    robotInfo->forwardAcceleration = getForwardAcceleration();
+    robotInfo->rotationAcceleration = getRotationAcceleration();
     robotInfo->IRTop_Distance = irTOF0.getDistance();
     robotInfo->IRBottom_Distance = irTOF1.getDistance();
 }
@@ -239,13 +239,12 @@ void sensors_update(void) {
     circBuffer_write(us1Buffer, usDistances[1]);
 
     circBuffer_write(headingBuffer, getHeading());
-    circBuffer_write(forwardAccelerationBuffer, getForwardAcceleration());
-    circBuffer_write(rotationAccelerationBuffer, getRotationAcceleration());
+    // circBuffer_write(forwardAccelerationBuffer, getForwardAcceleration());
+    // circBuffer_write(rotationAccelerationBuffer, getRotationAcceleration());
 
     // Update IR TOF sensors
     irTOF0.update();
     irTOF1.update();
-    Serial.println();
 }
 
     

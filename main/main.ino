@@ -27,7 +27,7 @@
 // Scheduler constants
 #define SENSOR_UPDATE_TIME 20
 #define ROBOT_INFO_UPDATE_TIME 50
-#define FSM_UPDATE_TIME 2000
+#define FSM_UPDATE_TIME 100
 #define SLOW_UPDATE_TIME 500
 
 // Watchdog constants
@@ -35,8 +35,10 @@
 #define ROTATION_SPEED_THRESHOLD 10 // Threshold for difference in speeds when the robot is considered to be rotating
 #define REVERSE_SPEED_THRESHOLD -10 // Threshold for when the robot is considered to be moving backwards
 
-#define FOWARD_ACC_THRESHOLD 10 // Threshold for when the robot is considered to be accelerating forward
-#define ROTATION_ACC_THRESHOLD 10 // Threshold for when the robot is considered to be accelerating rotation
+#define FOWARD_ACC_THRESHOLD 0.5 // Threshold for when the robot is considered to be accelerating forward
+#define ROTATION_ACC_THRESHOLD 0.55 // Threshold for when the robot is considered to be accelerating rotation
+
+#define STATIONARY_TIME 2000 // Time the robot must be stationary for before the watchdog is triggered
 
 // FSM constants
 enum FSMStates {
@@ -51,6 +53,7 @@ enum FSMStates {
 
 // ===================================== Globals ======================================
 bool running = true; // Whether the robot is running or not
+
 
 // robotInfo struct 
 RobotInfo_t robotInfo = {0};
@@ -93,31 +96,54 @@ void robot_setup() {
 /**
  * @Brief Monitor the robots movements and get it unstuck if it gets stuck
  * @param robotInfo Pointer to the robotInfo struct 
+ * @param reset Whether to reset the watchdog or not
  *
  * @return > 0 if the robot is stuck (1 = Forward Blocked, 2 = Rotation Blocked, 3 = Reveresed Blocked, 4 = B)
  */
-uint8_t watchDog(robotInfo* robotInfo) {
+uint8_t watchDog(RobotInfo_t* robotInfo, bool reset) {
+    static elapsedMillis watchDogTimer = 0;
+
+    if (reset) {
+        watchDogTimer = 0;
+    }
+
     // Check if the robot is trying to go forward but is not moving
     if (robotInfo->leftMotorSpeed + robotInfo->rightMotorSpeed > FORWARD_SPEED_THRESHOLD) {
-        if (abs(robotInfo->fowardAcceleration) < FOWARD_ACC_THRESHOLD) {
-            return 1;
+        if (abs(robotInfo->forwardAcceleration) < FOWARD_ACC_THRESHOLD) {
+            if (watchDogTimer > STATIONARY_TIME) {
+                watchDogTimer = 0;
+                return 1;
+            } else {
+                return 0;
+            }
         }
     }
 
     // Check if the robot is trying to rotate but is not moving
-    if (abs(robotInfo->leftMotorSpeed - robotInfo->rightMotorSpeed) > ROTATION_THRESHOLD) {
+    if (abs(robotInfo->leftMotorSpeed - robotInfo->rightMotorSpeed) > ROTATION_SPEED_THRESHOLD) {
         if (abs(robotInfo->rotationAcceleration) < ROTATION_ACC_THRESHOLD) {
-            return 2;
+            if (watchDogTimer > STATIONARY_TIME) {
+                watchDogTimer = 0;
+                return 2;
+            } else {
+                return 0;
+            }
         }
     }
 
     // Check if the robot is trying to reverse but is not moving
-    if (robotInfo->leftMotorSpeed + robotInfo->rightMotorSpeed < REVERSE_THRESHOLD) {
-        if (abs(robotInfo->fowardAcceleration) < FOWARD_ACC_THRESHOLD) {
-            return 3;
+    if (robotInfo->leftMotorSpeed + robotInfo->rightMotorSpeed < REVERSE_SPEED_THRESHOLD) {
+        if (abs(robotInfo->forwardAcceleration) < FOWARD_ACC_THRESHOLD) {
+            if (watchDogTimer > STATIONARY_TIME) {
+                watchDogTimer = 0;
+                return 3;
+            } else {
+                return 0;
+            }
         }
     }
 
+    watchDogTimer = 0;
     return 0;
 }
 
@@ -125,10 +151,10 @@ uint8_t watchDog(robotInfo* robotInfo) {
  * @Breif Update the finite state machine that controls the robots behavour
  * @param robotInfo Pointer to the robotInfo struct
  */
-void FSM(robotInfo* robotInfo) {
-    static uint8_t state = 0;
-    static firstRun = true;
-    static prevousStateWatchDog = FIND_WEIGHTS; // The state the robot was in before the watchdog was triggered
+void FSM(RobotInfo_t* robotInfo) {
+    static uint8_t state = FIND_WEIGHTS;
+    static bool firstRun = true;
+    static uint8_t prevousStateWatchDog = FIND_WEIGHTS; // The state the robot was in before the watchdog was triggered
     static elapsedMillis stateTimer = 0;
 
     switch (state) {
@@ -143,14 +169,14 @@ void FSM(robotInfo* robotInfo) {
             } else {
                 findWeights(robotInfo);
             }
-
+            robotInfo->mode = 1;
             break;
         case RETURN_HOME:
             if (firstRun) {
                 firstRun = false;
             }
 
-            if (returnToBase(robotInfo)) {
+            if (/*returnToBase(robotInfo)*/ false) {
                 state = FIND_WEIGHTS;
                 firstRun = true;
             }
@@ -161,9 +187,14 @@ void FSM(robotInfo* robotInfo) {
                 stateTimer = 0;
             }
 
+            robotInfo->mode = 50;
             if (stateTimer > REVERSE_TIME) {
                 state = prevousStateWatchDog;
                 firstRun = true;
+
+                motors_setLeft(0);
+                motors_setRight(0);
+                watchDog(robotInfo, true);
             } else {
                 motors_setLeft(REVERSE_SPEED);
                 motors_setRight(REVERSE_SPEED);
@@ -173,7 +204,7 @@ void FSM(robotInfo* robotInfo) {
 
     // Check the robots watch dog
     if (state != WATCH_DOG) {
-        if (watchDog(robotInfo)) {
+        if (watchDog(robotInfo, false) != 0) {
             prevousStateWatchDog = state;
             state = WATCH_DOG;
             firstRun = true;
@@ -201,7 +232,7 @@ void loop() {
         if (robotInfoUpdateTimer > ROBOT_INFO_UPDATE_TIME) {
             sensors_updateInfo(&robotInfo);
             motors_update(&robotInfo);
-            // printRobotInfo(&robotInfo);
+            printRobotInfo(&robotInfo);
             robotInfoUpdateTimer = 0;
         }
 
@@ -213,9 +244,7 @@ void loop() {
             // motors_followHeading(&robotInfo, 0, 35);
             // crane_move_weight();
             // returnToBase(&robotInfo);
-            motors_setLeft(40);
-            motors_setRight(40);
-            
+            FSM(&robotInfo);
             FSMTimer = 0;
         }
 

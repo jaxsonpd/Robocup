@@ -72,14 +72,10 @@ void IRTOF1::deInit(void) {
 void IRTOF1::update(void) {
     static uint32_t lastDistance = 0;
     uint32_t distance = sensor.read(false);
-    Serial.print(distance);
     if (distance > MAX_DISTANCE) {
         distance = lastDistance;
     }
     circBuffer_write(distanceBuffer, distance);
-    Serial.print(",");
-    Serial.print(circBuffer_average(distanceBuffer));
-    Serial.print(",");
     lastDistance = distance;
 }
 

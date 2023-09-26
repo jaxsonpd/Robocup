@@ -16,7 +16,7 @@
 #include "robotInformation.hpp"
 
 #include <stdint.h>
-#include <stdbool.h>
+#include <stdbool.h> 
 
 // ===================================== Constants ====================================
 enum motor { // Motor selection enum
