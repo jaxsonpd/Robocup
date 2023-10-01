@@ -16,6 +16,7 @@
 #include "returnToBase.hpp"
 #include "weightCollection.hpp"
 #include "collector.hpp"
+#include "src/colorSensor.hpp"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -31,6 +32,8 @@
 #define SLOW_UPDATE_TIME 500
 
 // Watchdog constants
+#define WATCH_DOG_ENABLED false // Whether the watchdog is enabled or not
+
 #define FORWARD_SPEED_THRESHOLD 10 // Threshold for when the robot is considered to be moving forward
 #define ROTATION_SPEED_THRESHOLD 10 // Threshold for difference in speeds when the robot is considered to be rotating
 #define REVERSE_SPEED_THRESHOLD -10 // Threshold for when the robot is considered to be moving backwards
@@ -77,6 +80,9 @@ void robot_setup() {
     if (sensors_init()) {
         Serial.println("Error setting up sensors");
     }
+
+    colorSensor_init();
+
     if (crane_setup()) {
       Serial.println("Error setting up crane");
     }
@@ -85,7 +91,7 @@ void robot_setup() {
     returnToBase_init(&robotInfo);
 
     // Wait for the go button to be pressed
-    waitForGo();
+    //waitForGo();
     Serial.println("Go button pressed, starting robot");
     
     delay(1000);
@@ -169,8 +175,8 @@ void FSM(RobotInfo_t* robotInfo) {
             } else {
                 findWeights(robotInfo);
             }
-            robotInfo->mode = 1;
             break;
+
         case RETURN_HOME:
             if (firstRun) {
                 firstRun = false;
@@ -181,13 +187,13 @@ void FSM(RobotInfo_t* robotInfo) {
                 firstRun = true;
             }
             break;
+
         case WATCH_DOG:
             if (firstRun) {
                 firstRun = false;
                 stateTimer = 0;
             }
 
-            robotInfo->mode = 50;
             if (stateTimer > REVERSE_TIME) {
                 state = prevousStateWatchDog;
                 firstRun = true;
@@ -203,8 +209,8 @@ void FSM(RobotInfo_t* robotInfo) {
     }
 
     // Check the robots watch dog
-    if (state != WATCH_DOG) {
-        if (watchDog(robotInfo, false) != 0) {
+    if (state != WATCH_DOG & WATCH_DOG_ENABLED) {
+        if (watchDog(robotInfo, false)) {
             prevousStateWatchDog = state;
             state = WATCH_DOG;
             firstRun = true;
@@ -232,7 +238,7 @@ void loop() {
         if (robotInfoUpdateTimer > ROBOT_INFO_UPDATE_TIME) {
             sensors_updateInfo(&robotInfo);
             motors_update(&robotInfo);
-            printRobotInfo(&robotInfo);
+            // printRobotInfo(&robotInfo);
             robotInfoUpdateTimer = 0;
         }
 
@@ -244,7 +250,8 @@ void loop() {
             // motors_followHeading(&robotInfo, 0, 35);
             // crane_move_weight();
             // returnToBase(&robotInfo);
-            FSM(&robotInfo);
+            // FSM(&robotInfo);
+            colorSensor_setBase();
             FSMTimer = 0;
         }
 

@@ -8,7 +8,6 @@
 
 // ===================================== Includes =====================================
 #include <Arduino.h>
-#include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
@@ -118,8 +117,6 @@ static void init_USTOF(void) {
  */
 bool sensors_init(void) {
     // Initialise the IO expander
-    Wire.begin();
-    Wire.setClock(400000); // use 400 kHz I2C
 
     io.begin(SX1509_ADDRESS);
 

@@ -24,7 +24,7 @@
 
 #define WEIGHT_DIFFERENCE_THRESHOLD 100 // Difference between IR sensors to detect weight
 #define WEIGHT_CLOSE_DISTANCE 100 // Distance to weight to trigger weight collection
-#define OBSTICAL_CLOSE_DISTANCE 300 // Distance to obstical to trigger rotation
+#define OBSTICAL_CLOSE_DISTANCE 400 // Distance to obstical to trigger rotation
 #define MAX_DETECTION_RANGE 950 // Maximum range that weights can be detected at
 
 #define HEADING_THRESHOLD 8 // Threshold for heading to be considered the same
@@ -61,6 +61,7 @@ static bool weightDetected(uint32_t topDistance, uint32_t bottomDistance) {
     return false;
 }
 
+
 /**
  * @brief Find weights and collect them
  * @param robotInfo the robot information struct
@@ -78,6 +79,7 @@ void findWeights(RobotInfo_t *robotInfo) {
 
     static int16_t mostOpenHeading = 0; // Heading of the most open area
     static int16_t mostOpenDistance = 0; // Distance of the most open area
+    static int16_t mostOpenHeadingPrevInv = 180; // Previous heading of the most open area
 
     // State machine
     switch(state) {
@@ -96,8 +98,10 @@ void findWeights(RobotInfo_t *robotInfo) {
 
             // Update the most open area heading
             if (robotInfo->IRTop_Distance > mostOpenDistance) {
-                mostOpenDistance = robotInfo->IRTop_Distance;
-                mostOpenHeading = robotInfo->IMU_Heading;
+                if (abs(robotInfo->IMU_Heading - mostOpenHeadingPrevInv) > 10) { // Robot is not going back were it came from
+                    mostOpenHeading = robotInfo->IMU_Heading;
+                    mostOpenDistance = robotInfo->IRTop_Distance;
+                }
             }
 
 
@@ -106,16 +110,28 @@ void findWeights(RobotInfo_t *robotInfo) {
                 // Weight has been detected enough times so collect it
                 state = MOVE_TO_WEIGHT; // Move to the weight
                 firstRun = true;
+
                 weightHeading = robotInfo->IMU_Heading; // Set the weight heading
+                weightDistance = robotInfo->IRBottom_Distance; // Set the weight distance
+
                 weightDetectionOccurances = 0;
 
                 Serial.print("Detected at: ");
                 Serial.println(weightHeading);
+
+                motors_setLeft(0);
+                motors_setRight(0);
+
             } else if (abs(robotInfo->IMU_Heading - startHeading) < HEADING_THRESHOLD) {  // Check if we have rotated 360
                 // We have rotated 360
                 state = MOVE_TO_OPEN; // Move to the most open area
                 firstRun = true;
+                
+                mostOpenHeadingPrevInv = mostOpenHeading + 180;
 
+                if (mostOpenHeadingPrevInv > 180) {
+                    mostOpenHeadingPrevInv -= 360;
+                }
             } else {  // Rotate on the spot
                 motors_setLeft(ROTATION_SPEED);
                 motors_setRight(-ROTATION_SPEED);
@@ -154,6 +170,9 @@ void findWeights(RobotInfo_t *robotInfo) {
             if (robotInfo->IRBottom_Distance < WEIGHT_CLOSE_DISTANCE) { // Check if we are close to the weight
                 state = AT_WEIGHT; // We are at the weight
                 firstRun = true;
+            } else if (moveTimer > (weightDistance*100)) {
+                state = AT_WEIGHT; // We are at the weight
+                firstRun = true;
             } else { // Move to the weight
                 motors_followHeading(robotInfo, weightHeading, MOVE_SPEED);
             }
@@ -182,6 +201,7 @@ void findWeights(RobotInfo_t *robotInfo) {
 
     robotInfo->mode = state;
 }
+
 
 /**
  * @brief Reset the weight collection state machine

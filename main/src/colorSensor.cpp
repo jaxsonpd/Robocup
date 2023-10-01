@@ -39,6 +39,7 @@ void colorSensor_setBase() {
     delay(60);  // takes 50ms to read
     tcs.getRawData(&r_base, &g_base, &b_base, &c);
     tcs.setInterrupt(true);  // turn off LED
+    Serial.println("Base Color " + String(r_base) + " " + String(g_base) + " " + String(b_base) + " " + String(c));
 }
 
 
