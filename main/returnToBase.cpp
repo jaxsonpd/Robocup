@@ -35,14 +35,14 @@ enum states {
 };
 
 enum wallSide {
-    UNKOWN,
+    UNKNOWN,
     LEFT,
     RIGHT,
 };
 
 // ===================================== Globals ======================================
 static uint8_t state = 0;
-static int16_t baseHeading = 135;
+ int16_t baseHeading;
 static bool firstRun = true; // Flag to indicate if the state has just been entered
 
 // ===================================== Function Definitions =========================
@@ -199,3 +199,12 @@ void returnToBase_init(RobotInfo_t* robotInfo) {
     robotInfo->mode = state + STATE_OFFSET; // Update the robot mode
     firstRun = true;
 }
+
+void baseheading_init(RobotInfo_t* robotInfo) {
+  if ( robotInfo->USRight_Distance < robotInfo->USLeft_Distance) {
+    baseHeading = 135;
+  } else {
+    baseHeading = -135;
+  }
+}
+

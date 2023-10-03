@@ -22,5 +22,5 @@
 
 void returnToBase(RobotInfo_t* robotInfo);
 void returnToBase_init(RobotInfo_t* robotInfo);
-
+void baseheading_init(RobotInfo_t* robotInfo);
 #endif // RETURNTOBASE_H

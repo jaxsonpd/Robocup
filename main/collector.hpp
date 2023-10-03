@@ -16,6 +16,6 @@
 
 bool crane_setup();
 void crane_move_weight();
-
+bool weight_release();
 
 #endif // COLLECTOR_H

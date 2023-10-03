@@ -87,6 +87,8 @@ void robot_setup() {
       Serial.println("Error setting up crane");
     }
 
+  
+
     Serial.println("Initialising weight collection");
     returnToBase_init(&robotInfo);
 
@@ -252,6 +254,7 @@ void loop() {
             // returnToBase(&robotInfo);
             // FSM(&robotInfo);
             colorSensor_setBase();
+            baseheading_init(&robotInfo) 
             FSMTimer = 0;
         }
 

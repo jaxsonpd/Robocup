@@ -13,6 +13,7 @@
 #define SERVO_1_PIN 29
 #define SERVO_2_PIN 28
 #define ELECTROMAGNET_PIN 20
+#define SOLENOID_PIN 14
 
 #define RELEASE_ANGLE 140
 #define COLLECT_ANGLE 15
@@ -31,7 +32,18 @@ bool crane_setup()
 {   
   craneServo.attach(SERVO_1_PIN); 
   pinMode(ELECTROMAGNET_PIN, OUTPUT);
+  pinMode(SOLENOID_PIN, OUTPUT);
   return 0;
+}
+
+bool weight_release() {
+  static int solenoid = 0;
+  if (solenoid == 0) { //solenoid off -> on, release weights
+    digitalWrite(ELECTROMAGNET_PIN, HIGH);
+
+  } else{
+    digitalWrite(ELECTROMAGNET_PIN, LOW);
+  }
 }
 
 
