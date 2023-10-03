@@ -8,7 +8,6 @@
 
 // ===================================== Includes =====================================
 #include <Arduino.h>
-#include <Wire.h>
 #include <Adafruit_Sensor.h>
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
@@ -35,7 +34,7 @@
 
 // Buffer sizes for sensor readings
 #define BUFFER_SIZE 8
-#define IRTOF_BUFFER_SIZE 1
+#define IRTOF_BUFFER_SIZE 3
 
 #define SX1509_ADDRESS 0x3F // TOF IO expander address
 
@@ -56,6 +55,8 @@ uint16_t* usDistances = new uint16_t[US_NUM]; // Array of computed distances
 circBuffer_t* us0Buffer = new circBuffer_t[BUFFER_SIZE]; // Left US
 circBuffer_t* us1Buffer = new circBuffer_t[BUFFER_SIZE]; // Right US
 circBuffer_t* headingBuffer = new circBuffer_t[BUFFER_SIZE];
+circBuffer_t* forwardAccelerationBuffer = new circBuffer_t[BUFFER_SIZE];
+circBuffer_t* rotationAccelerationBuffer = new circBuffer_t[BUFFER_SIZE];
 
 // create IR TOF sensor objects
 IRTOF1 irTOF0;
@@ -116,34 +117,27 @@ static void init_USTOF(void) {
  */
 bool sensors_init(void) {
     // Initialise the IO expander
-    Wire.begin();
-    Wire.setClock(400000); // use 400 kHz I2C
 
     io.begin(SX1509_ADDRESS);
 
-    Serial.println("External IO init");
 
     // Initialise the IMU
     if(!bno.begin()) {
         return 1;
     }
 
-    Serial.println("IMU on");
-
     // Initialise the ultrasonic sensors
     init_USTOF();
 
-    Serial.println("US on");
-    
     // Initailise the IR TOF sensors
     init_IRTOF();
 
-    Serial.println("IRTOF on");
 
     // Initialise the buffers
     circBuffer_init(us0Buffer, BUFFER_SIZE);
     circBuffer_init(us1Buffer, BUFFER_SIZE);
     circBuffer_init(headingBuffer, BUFFER_SIZE);
+
 
     return 0;
 }
@@ -160,6 +154,7 @@ void sensor_deInit(void) {
     io.digitalWrite(IRTOF_1_XSHUT_PIN, LOW); 
 }
 
+// ++++++++++++++++++++++++++++++++++++++ Sensor Functions ++++++++++++++++++++++++++++++++++++++
 
 /** 
  * @brief Get the current heading of the robot
@@ -188,6 +183,28 @@ static int16_t getHeading(void) {
 }
 
 
+/**
+ * @brief get the forward acceleration of the robot
+ *
+ * @return the forward acceleration in m/s^2
+ */
+static double getForwardAcceleration(void) {
+    imu::Vector<3> acceleration = bno.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
+    return acceleration.x();
+}
+
+/**
+ * @brief get the rotation acceleration of the robot
+ *
+ * @return the rotation acceleration in m/s^2
+ */
+static double getRotationAcceleration(void) {
+    imu::Vector<3> acceleration = bno.getVector(Adafruit_BNO055::VECTOR_LINEARACCEL);
+    return acceleration.z();
+}
+
+// ++++++++++++++++++++++++++++++++++++++ Sensor Update Functions ++++++++++++++++++++++++++++++++++++++
+
 /** 
  * @brief Update the robot info struct with the sensor data
  * @param robotInfo The robot info struct to update
@@ -197,6 +214,8 @@ void sensors_updateInfo(RobotInfo_t* robotInfo) {
     robotInfo->IMU_Heading = circBuffer_average(headingBuffer);
     robotInfo->USLeft_Distance = circBuffer_average(us0Buffer);
     robotInfo->USRight_Distance= circBuffer_average(us1Buffer);
+    robotInfo->forwardAcceleration = getForwardAcceleration();
+    robotInfo->rotationAcceleration = getRotationAcceleration();
     robotInfo->IRTop_Distance = irTOF0.getDistance();
     robotInfo->IRBottom_Distance = irTOF1.getDistance();
 }
@@ -215,7 +234,10 @@ void sensors_update(void) {
     // Update Buffers
     circBuffer_write(us0Buffer, usDistances[0]);
     circBuffer_write(us1Buffer, usDistances[1]);
+
     circBuffer_write(headingBuffer, getHeading());
+    // circBuffer_write(forwardAccelerationBuffer, getForwardAcceleration());
+    // circBuffer_write(rotationAccelerationBuffer, getRotationAcceleration());
 
     // Update IR TOF sensors
     irTOF0.update();

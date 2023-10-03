@@ -17,6 +17,7 @@
 
 // ===================================== Types/Constants ==============================
 #define ADDRESS_DEFAULT 0b0101001 // Defult IR TOF Address
+#define MAX_DISTANCE 3000
 
 // ===================================== Globals ======================================
 
@@ -47,7 +48,7 @@ bool IRTOF1::init(uint8_t address, uint8_t XSHUT, uint8_t bufferSize) {
     }
     sensor.setAddress(address);
 
-    sensor.setDistanceMode(VL53L1X::Short);
+    sensor.setDistanceMode(VL53L1X::Medium);
     sensor.startContinuous(20);
 
     return 1;
@@ -69,7 +70,13 @@ void IRTOF1::deInit(void) {
  * 
  */
 void IRTOF1::update(void) {
-    circBuffer_write(distanceBuffer, sensor.read(false));
+    static uint32_t lastDistance = 0;
+    uint32_t distance = sensor.read(false);
+    if (distance > MAX_DISTANCE) {
+        distance = lastDistance;
+    }
+    circBuffer_write(distanceBuffer, distance);
+    lastDistance = distance;
 }
 
 

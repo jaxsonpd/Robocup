@@ -171,21 +171,6 @@ bool motors_followHeading(RobotInfo_t* robotInfo, int16_t headingSetpoint, int16
     leftMotor.setSpeed(motor1SpeedRaw);
     rightMotor.setSpeed(motor2SpeedRaw);
 
-    robotInfo->leftMotorSpeed = leftMotor.getSpeed();
-    robotInfo->rightMotorSpeed = rightMotor.getSpeed();
-
-    // Check to see if the robot is at the setpoint !! Depreciated
-    static elapsedMillis timeAtSetpoint = 0;
-
-    if (abs(robotInfo->targetHeading - robotInfo->IMU_Heading) <= SETPOINT_TOLERANCE) {
-        if (timeAtSetpoint > SETPOINT_TIME) {
-            robotInfo->atHeading = true;
-        }
-    } else {
-        robotInfo->atHeading = false;
-        timeAtSetpoint = 0;
-    }
-
     robotInfo->targetHeading = headingSetpoint;
     return robotInfo->atHeading;
 }
@@ -248,6 +233,63 @@ void motors_setRight(int16_t speed) {
     rightMotor.setSpeed(speed);
 }
 
+/**
+ * @brief Rotate the robot to a heading
+ * 
+ * @param robotInfo a pointer to the robot info struct
+ * @param targetHeading the heading to rotate to
+ * @param rotationSpeed the speed to rotate at
+ * 
+ * @return true if at targetHeading
+ */
+bool motors_rotate(RobotInfo_t* robotInfo, int16_t targetHeading, uint16_t rotationSpeed) {
+    // Calculate the error and bound it
+    int32_t error = targetHeading - robotInfo->IMU_Heading;
+
+    if (error >= MAX_HEADING) {
+      error -= HEADING_OFFSET;
+    } else if (error < MIN_HEADING) {
+      error += HEADING_OFFSET;
+    }
+    
+    if (abs(error) <= SETPOINT_TOLERANCE) { // Stop if at setpoint
+        leftMotor.setSpeed(0);
+        rightMotor.setSpeed(0);
+    } else { // Rotate the quickest way possible
+        if (error > 0) {
+            leftMotor.setSpeed(rotationSpeed);
+            rightMotor.setSpeed(-rotationSpeed);
+        } else {
+            leftMotor.setSpeed(-rotationSpeed);
+            rightMotor.setSpeed(rotationSpeed);
+        }
+    }
+
+    robotInfo->targetHeading = targetHeading;
+    return robotInfo->atHeading;
+
+}
+
+/**
+ * @brief Update the motors
+ * @param robotInfo a pointer to the robot info struct
+ */
+void motors_update(RobotInfo_t* robotInfo) {
+    // Check to see if the robot is at the setpoint
+    static elapsedMillis timeAtSetpoint = 0;
+
+    if (abs(robotInfo->targetHeading - robotInfo->IMU_Heading) <= SETPOINT_TOLERANCE) {
+        if (timeAtSetpoint > SETPOINT_TIME) {
+            robotInfo->atHeading = true;
+        }
+    } else {
+        robotInfo->atHeading = false;
+        timeAtSetpoint = 0;
+    }
+
+    robotInfo->leftMotorSpeed = leftMotor.getSpeed();
+    robotInfo->rightMotorSpeed = rightMotor.getSpeed();
+}
 
 // /** 
 //  * @brief Make the robot move in a shape
