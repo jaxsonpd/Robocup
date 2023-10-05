@@ -81,8 +81,8 @@ void robot_setup() {
         Serial.println("Error setting up sensors");
     }
 
-    if (crane_setup()) {
-      Serial.println("Error setting up crane");
+    if (collector_setup()) {
+      Serial.println("Error setting up collection mechanisim");
     }
 
     Serial.println("Initialising weight collection");

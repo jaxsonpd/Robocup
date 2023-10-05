@@ -11,11 +11,10 @@
 
 #include <Arduino.h>
 #include "collector.hpp"
-#include <Servo.h>
 
+bool collector_setup();
+bool weightCollect(RobotInfo_t* robotInfo);
 
-bool crane_setup();
-void crane_move_weight();
 
 
 #endif // COLLECTOR_H

@@ -11,6 +11,7 @@
 
 #include "weightCollection.hpp"
 #include "robotInformation.hpp"
+#include "collector.hpp"
 #include "motors.hpp"
 
 #include <stdint.h>
@@ -186,8 +187,9 @@ void findWeights(RobotInfo_t *robotInfo) {
             }
 
             // Check if weight has been removed 
-            // !! THIS WILL CHANGE WHEN THE CRANE IS INSTALLED !!
-            if (robotInfo->IRBottom_Distance > WEIGHT_CLOSE_DISTANCE) {
+            bool moveOnToNext = weightCollect(robotInfo);
+
+            if (moveOnToNext) {
                 state = ROTATING; // Rotate on the spot
                 firstRun = true;
             } else { // Hold Position
