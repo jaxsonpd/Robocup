@@ -12,6 +12,7 @@
 #include <Adafruit_BNO055.h>
 #include <utility/imumaths.h>
 #include <SparkFunSX1509.h>
+#include <Wire.h>
 
 #include "sensors.hpp"
 #include "src/ultrasonic.hpp"
@@ -116,6 +117,10 @@ static void init_USTOF(void) {
  * @return success (0) or failure (1)
  */
 bool sensors_init(void) {
+    // I2C Init
+    Wire.begin();
+    Wire.setClock(400000); // use 400 kHz I2C
+
     // Initialise the IO expander
 
     io.begin(SX1509_ADDRESS);

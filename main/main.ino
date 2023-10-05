@@ -81,8 +81,6 @@ void robot_setup() {
         Serial.println("Error setting up sensors");
     }
 
-    colorSensor_init();
-
     if (crane_setup()) {
       Serial.println("Error setting up crane");
     }
@@ -91,7 +89,7 @@ void robot_setup() {
     returnToBase_init(&robotInfo);
 
     // Wait for the go button to be pressed
-    //waitForGo();
+    waitForGo();
     Serial.println("Go button pressed, starting robot");
     
     delay(1000);
@@ -169,7 +167,7 @@ void FSM(RobotInfo_t* robotInfo) {
                 firstRun = false;
             }
 
-            if (robotInfo->weightsOnBoard == 3) {
+            if (robotInfo->weightsOnBoard >= 3) {
                 state = RETURN_HOME;
                 firstRun = true;
             } else {
@@ -238,7 +236,7 @@ void loop() {
         if (robotInfoUpdateTimer > ROBOT_INFO_UPDATE_TIME) {
             sensors_updateInfo(&robotInfo);
             motors_update(&robotInfo);
-            // printRobotInfo(&robotInfo);
+            printRobotInfo(&robotInfo);
             robotInfoUpdateTimer = 0;
         }
 
@@ -250,8 +248,8 @@ void loop() {
             // motors_followHeading(&robotInfo, 0, 35);
             // crane_move_weight();
             // returnToBase(&robotInfo);
-            // FSM(&robotInfo);
-            colorSensor_setBase();
+            FSM(&robotInfo);
+            // colorSensor_setBase();
             FSMTimer = 0;
         }
 

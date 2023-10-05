@@ -18,18 +18,18 @@
 
 
 // ===================================== Types/Constants ==============================
-#define ROTATION_SPEED 20 // Speed during rotation step in %
-#define MOVE_SPEED 30 // Speed during move phase in % 
-#define MOVE_TIME 10000 // Time to move to open area in ms
+#define ROTATION_SPEED 30 // Speed during rotation step in %
+#define MOVE_SPEED 50 // Speed during move phase in % 
+#define MOVE_TIME 4000 // Time to move to open area in ms
 
 #define WEIGHT_DIFFERENCE_THRESHOLD 100 // Difference between IR sensors to detect weight
 #define WEIGHT_CLOSE_DISTANCE 100 // Distance to weight to trigger weight collection
 #define OBSTICAL_CLOSE_DISTANCE 400 // Distance to obstical to trigger rotation
 #define MAX_DETECTION_RANGE 950 // Maximum range that weights can be detected at
 
-#define HEADING_THRESHOLD 8 // Threshold for heading to be considered the same
+#define HEADING_THRESHOLD 9 // Threshold for heading to be considered the same
 
-#define NUM_DETECTIONS 3 // Number of times the weight must be detected before it is collected
+#define NUM_DETECTIONS 1 // Number of times the weight must be detected before it is collected
 
 // ===================================== Globals ======================================
 enum states {
@@ -170,11 +170,11 @@ void findWeights(RobotInfo_t *robotInfo) {
             if (robotInfo->IRBottom_Distance < WEIGHT_CLOSE_DISTANCE) { // Check if we are close to the weight
                 state = AT_WEIGHT; // We are at the weight
                 firstRun = true;
-            } else if (moveTimer > (weightDistance*100)) {
+            } else if (moveTimer > (weightDistance*2)) {
                 state = AT_WEIGHT; // We are at the weight
                 firstRun = true;
             } else { // Move to the weight
-                motors_followHeading(robotInfo, weightHeading, MOVE_SPEED);
+                motors_followHeading(robotInfo, weightHeading, 30);
             }
             
             break;

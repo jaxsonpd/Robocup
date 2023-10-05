@@ -12,12 +12,15 @@
 
 #include <Adafruit_TCS34725.h>
 #include <Arduino.h>
+#include <Wire.h>
 
 // ===================================== Types/Constants ==============================
 #define R_THRESHOLD 100
 #define G_THRESHOLD 100
 #define B_THRESHOLD 100
 #define READ_TIME 50
+
+#define TCS34725_ADDRESS (0x29)     /**< I2C address **/
 
 // ===================================== Globals ======================================
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
@@ -27,8 +30,6 @@ uint16_t g_base = 0;
 uint16_t b_base = 0;
 
 // ===================================== Function Definitions =========================
-
-
 /**
  * @brief Set the base color
  * 
@@ -50,6 +51,10 @@ void colorSensor_setBase() {
  * @return false if unsuccessful
  */
 bool colorSensor_init() {
+    // I2C Init
+    Wire1.begin(TCS34725_ADDRESS, &Wire1);
+    Wire1.setClock(400000); // use 400 kHz I2C
+
     if (tcs.begin()) {
         return true;
     } else {

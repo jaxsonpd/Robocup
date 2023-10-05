@@ -10,7 +10,6 @@
 #include <Arduino.h>
 
 #include "utils.hpp"
-#include <Wire.h>
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -45,10 +44,6 @@ void waitForGo() {
  *
  */
 void serialInit(uint32_t baudRate) {
-    // I2C Init
-    Wire.begin();
-    Wire.setClock(400000); // use 400 kHz I2C
-
     Serial.begin(baudRate);
 
     // Let the user know that the serial output has started
