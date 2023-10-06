@@ -87,13 +87,12 @@ void robot_setup() {
       Serial.println("Error setting up crane");
     }
 
-  
 
     Serial.println("Initialising weight collection");
     returnToBase_init(&robotInfo);
-
+    
     // Wait for the go button to be pressed
-    //waitForGo();
+    waitForGo();
     Serial.println("Go button pressed, starting robot");
     
     delay(1000);
@@ -160,11 +159,11 @@ uint8_t watchDog(RobotInfo_t* robotInfo, bool reset) {
  * @param robotInfo Pointer to the robotInfo struct
  */
 void FSM(RobotInfo_t* robotInfo) {
-    static uint8_t state = FIND_WEIGHTS;
+    static uint8_t state = RETURN_HOME;
     static bool firstRun = true;
     static uint8_t prevousStateWatchDog = FIND_WEIGHTS; // The state the robot was in before the watchdog was triggered
     static elapsedMillis stateTimer = 0;
-
+    Serial.println(state);
     switch (state) {
         case FIND_WEIGHTS:
             if (firstRun) {
@@ -184,10 +183,8 @@ void FSM(RobotInfo_t* robotInfo) {
                 firstRun = false;
             }
 
-            if (/*returnToBase(robotInfo)*/ false) {
-                state = FIND_WEIGHTS;
-                firstRun = true;
-            }
+            returnToBase(robotInfo);
+            
             break;
 
         case WATCH_DOG:
@@ -230,6 +227,7 @@ void loop() {
     elapsedMillis FSMTimer = 0;
     elapsedMillis slowUpdateTimer = 0;
 
+    
 	while(running) {
         if (sensorUpdateTimer > SENSOR_UPDATE_TIME) {
             sensors_update();
@@ -240,7 +238,7 @@ void loop() {
         if (robotInfoUpdateTimer > ROBOT_INFO_UPDATE_TIME) {
             sensors_updateInfo(&robotInfo);
             motors_update(&robotInfo);
-            // printRobotInfo(&robotInfo);
+            printRobotInfo(&robotInfo);
             robotInfoUpdateTimer = 0;
         }
 
@@ -250,11 +248,11 @@ void loop() {
             // findWeights(&robotInfo);
             // motors_formShape(&robotInfo, 5000, 90);
             // motors_followHeading(&robotInfo, 0, 35);
-            // crane_move_weight();
-            // returnToBase(&robotInfo);
+            //crane_move_weight();
+            returnToBase(&robotInfo);
             // FSM(&robotInfo);
-            colorSensor_setBase();
-            baseheading_init(&robotInfo) 
+            //colorSensor_setBase();
+
             FSMTimer = 0;
         }
 
