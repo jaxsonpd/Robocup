@@ -22,6 +22,7 @@
 #define STATE_OFFSET 10 // Offset for state reporting
 #define TURN_DISTANCE 100 // The distance ta wall has to be to trigger a turn
 #define US_WALL_DISTANCE 100 // Maxiumum wall distance for ROATE state to not move into HEAD_HOME
+
 #define ROTATE_SPEED 30 // The degrees offset used to rotate the robot
 #define US_TOLERANCE 10 // The uncertainty of the ultrasonic sensor
 #define WALL_ADJ_DIST 400 //Distance from wall to determine which way to turn
@@ -75,6 +76,8 @@ void returnToBase(RobotInfo_t* robotInfo) {
             // ** State machine update **
             // Check if there is a wall in front of the robot
             if (robotInfo->IRTop_Distance < TURN_DISTANCE) { // Object detected
+              wallDetections++;
+              if (wallDetections >= 3) {
                 firstRun = true;
                 state = HUG_WALL;
                 wallSide = LEFT;
@@ -87,8 +90,9 @@ void returnToBase(RobotInfo_t* robotInfo) {
                     state = HUG_WALL;
 
                 }
+              }
             } else {
-                motors_followHeading(robotInfo, baseHeading, 0);
+              motors_followHeading(robotInfo, baseHeading, 0);
             }
             break;
         
@@ -118,7 +122,7 @@ void returnToBase(RobotInfo_t* robotInfo) {
 
             // ** State machine update **
             // Check if there is a wall in front of the robot
-            if (abs(robotInfo->IMU_Heading - targetHeading) < 6) {
+            if (abs(robotInfo->IMU_Heading - targetHeading) < 8) {
               if (robotInfo->IRTop_Distance < TURN_DISTANCE) { // Object detected
                 wallDetections++;
                 if (wallDetections >= 3) {
