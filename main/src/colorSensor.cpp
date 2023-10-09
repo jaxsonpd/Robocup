@@ -23,13 +23,13 @@
 
 // Green base color
 #define R_GREEN_BASE 0
-#define G_GREEN_BASE 0
-#define B_GREEN_BASE 0
+#define G_GREEN_BASE 130
+#define B_GREEN_BASE 100
 
 // Blue base color
 #define R_BLUE_BASE 0
-#define G_BLUE_BASE 0
-#define B_BLUE_BASE 0
+#define G_BLUE_BASE 100
+#define B_BLUE_BASE 100
 
 #define TCS34725_ADDRESS (0x29)     /**< I2C address **/
 
@@ -50,12 +50,11 @@ uint8_t colorSensor_getBase() {
     delay(60);  // takes 50ms to read
     tcs.getRawData(&r, &g, &b, &c);
     tcs.setInterrupt(true);  // turn off LED
-    Serial.println("Color " + String(r) + " " + String(g) + " " + String(b) + " " + String(c));
 
     // Check what base the robot is over
-    if (abs(r-R_GREEN_BASE) < R_THRESHOLD && abs(g-G_GREEN_BASE) < G_THRESHOLD && abs(b-B_GREEN_BASE) < B_THRESHOLD) {
+    if ((G_GREEN_BASE < g) && (b < B_GREEN_BASE)) {
         return GREEN;
-    } else if (abs(r-R_BLUE_BASE) < R_THRESHOLD && abs(g-G_BLUE_BASE) < G_THRESHOLD && abs(b-B_BLUE_BASE) < B_THRESHOLD) {
+    } else if ((B_BLUE_BASE < b)) {
         return BLUE;
     } else {
         return ARENA;
@@ -75,9 +74,9 @@ bool colorSensor_init() {
     Wire1.setClock(400000); // use 400 kHz I2C
 
     if (tcs.begin(TCS34725_ADDRESS, &Wire1)) {
-        return true;
-    } else {
         return false;
+    } else {
+        return true;
     }
 }
 
@@ -99,15 +98,14 @@ uint8_t colorSensor_read() {
     } else if (readingTimer > READ_TIME) { // Wait for 50ms
         tcs.getRawData(&r, &g, &b, &c);
         tcs.setInterrupt(true);  // turn off LED
-        Serial.println("Color " + String(r) + " " + String(g) + " " + String(b) + " " + String(c));
 
         ledOn = false;
         
         // Check what base the robot is over
-        if (abs(r-R_GREEN_BASE) < R_THRESHOLD && abs(g-G_GREEN_BASE) < G_THRESHOLD && abs(b-B_GREEN_BASE) < B_THRESHOLD) {
+        if ((G_GREEN_BASE < g) && (b < B_GREEN_BASE)) {
             prevousColor = GREEN;
             return GREEN;
-        } else if (abs(r-R_BLUE_BASE) < R_THRESHOLD && abs(g-G_BLUE_BASE) < G_THRESHOLD && abs(b-B_BLUE_BASE) < B_THRESHOLD) {
+        } else if ((B_BLUE_BASE < b)) {
             prevousColor = BLUE;
             return BLUE;
         } else {

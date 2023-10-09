@@ -110,7 +110,7 @@ void electromagnet(bool on) {
 bool claw_setup() {
     leftClawServo.attach(LEFT_CLAW_SERVO_PIN);
     rightClawServo.attach(RIGHT_CLAW_SERVO_PIN);
-    pinMode(CLAW_TEST_PIN, INPUT);
+    // pinMode(CLAW_TEST_PIN, INPUT);
 
     return 0;
 }
@@ -197,8 +197,8 @@ uint8_t weightCollect(RobotInfo_t* robotInfo) {
             }
 
             if (stateTimer > CHECK_WEIGHT_TIME) { // Check the weight to see if it is there and conductive
-                if (robotInfo->IRBottom_Distance < WEIGHT_IN_CLAW_DISTANCE) {
-                    if (claw_test()) {
+                if ((robotInfo->IRBottom_Distance < WEIGHT_IN_CLAW_DISTANCE)) {
+                    if ((analogRead(A10) < 50) && (robotInfo->colorOver == 2)) {
                         collectionState = POSITION_WEIGHT;
                         firstRun = true;
                     } else {

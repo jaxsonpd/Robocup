@@ -140,12 +140,12 @@ bool sensors_init(RobotInfo_t* robotInfo) {
     init_IRTOF();
 
     // Set the base
-    // if (colorSensor_init()) {
-    //     Serial.println("Color sensor init failed");
-    //     return 1;
-    // }
+    if (colorSensor_init()) {
+        Serial.println("Color sensor init failed");
+        return 1;
+    }
 
-    // robotInfo->homeBase = colorSensor_getBase();
+    robotInfo->homeBase = colorSensor_getBase();
 
     // Initialise the buffers
     circBuffer_init(us0Buffer, BUFFER_SIZE);
@@ -166,6 +166,13 @@ void sensor_deInit(void) {
     
     irTOF1.deInit();
     io.digitalWrite(IRTOF_1_XSHUT_PIN, LOW); 
+
+    delete usDistances;
+    delete us0Buffer;
+    delete us1Buffer;
+    delete headingBuffer;
+    delete forwardAccelerationBuffer;
+    delete rotationAccelerationBuffer;
 }
 
 // ++++++++++++++++++++++++++++++++++++++ Sensor Functions ++++++++++++++++++++++++++++++++++++++
@@ -240,7 +247,7 @@ void sensors_updateInfo(RobotInfo_t* robotInfo) {
     robotInfo->rotationAcceleration = getRotationAcceleration();
     robotInfo->IRTop_Distance = irTOF0.getDistance();
     robotInfo->IRBottom_Distance = irTOF1.getDistance();
-    // robotInfo->colorOver = colorSensor_read();
+    robotInfo->colorOver = colorSensor_read();
 }
 
 /**

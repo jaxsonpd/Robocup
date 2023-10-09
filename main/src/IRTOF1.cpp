@@ -51,6 +51,7 @@ bool IRTOF1::init(uint8_t address, uint8_t XSHUT, uint8_t bufferSize) {
     sensor.setDistanceMode(VL53L1X::Medium);
     sensor.startContinuous(20);
 
+    delay(1000);
     return 1;
 }
 
@@ -61,6 +62,7 @@ bool IRTOF1::init(uint8_t address, uint8_t XSHUT, uint8_t bufferSize) {
  */
 void IRTOF1::deInit(void) {
     sensor.setAddress(ADDRESS_DEFAULT);
+    delete distanceBuffer;
     delay(100);
 }
 

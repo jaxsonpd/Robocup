@@ -91,6 +91,9 @@ void findWeights(RobotInfo_t *robotInfo) {
             if (firstRun) { // Setup the state
                 firstRun = false;
                 startHeading = robotInfo->IMU_Heading - 10; // Set the start heading to 2 degrees less than the current heading
+                if (startHeading < -179) {
+                    startHeading += 360;
+                }
                 moveTimer = 0; // Reset the move timer
                 mostOpenDistance = 0;
             }
@@ -205,6 +208,9 @@ void findWeights(RobotInfo_t *robotInfo) {
                 state = ROTATING; // Rotate on the spot
                 if (moveOnToNext == 2) { // Weight was not real
                     startHeading = robotInfo->IMU_Heading - 40; // Set the end heading to make a blank spot were the fake weight is
+                    if (startHeading < -179) {
+                        startHeading += 360;
+                    }
                     moveTimer = 0; // Reset the move timer
                     mostOpenDistance = 0;
                 } else {
