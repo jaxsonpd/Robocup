@@ -19,7 +19,7 @@
 #define ELECTROMAGNET_PIN 14
 
 #define RELEASE_ANGLE 135
-#define COLLECT_ANGLE 5
+#define COLLECT_ANGLE 0
 #define STANDBY_ANGLE 100
 
 // Claw constants
@@ -27,9 +27,9 @@
 #define RIGHT_CLAW_SERVO_PIN 32
 
 #define LEFT_OPEN_ANGLE 75
-#define LEFT_CLOSED_ANGLE 163
+#define LEFT_CLOSED_ANGLE 170
 #define RIGHT_OPEN_ANGLE 110
-#define RIGHT_CLOSED_ANGLE 20
+#define RIGHT_CLOSED_ANGLE 10
 
 #define CLAW_TEST_PIN 24
 
@@ -37,10 +37,10 @@
 #define CHECK_WEIGHT_TIME 1000
 
 #define REVERSE_TIME 700 // Time to reverse when positioning the weight
-#define REVERSE_SPEED -35 // Speed to reverse at
+#define REVERSE_SPEED -45 // Speed to reverse at
 
 #define FORWARD_TIME 700 // Time to move forward when positioning the weight
-#define FORWARD_SPEED 35 // Speed to move forward at
+#define FORWARD_SPEED 45 // Speed to move forward at
 
 #define COLLECT_TIME 3000 // Time to collect the weight before dropping it
 #define WEIGHT_IN_CLAW_DISTANCE 100 // Distance to weight to trigger weight collection (wether or not the weight has been caught)
@@ -237,11 +237,11 @@ uint8_t weightCollect(RobotInfo_t* robotInfo) {
             }
 
             if (stateTimer < BACK_OFF_TIME) {
-                motors_setLeft(-30);
-                motors_setRight(-30);
+                motors_setLeft(-40);
+                motors_setRight(-40);
             } else if (stateTimer < (BACK_OFF_TIME + BACK_OFF_ROTATE_TIME)) {
-                motors_setLeft(30);
-                motors_setRight(-30);
+                motors_setLeft(40);
+                motors_setRight(-40);
             } else {
                 collectionState = CHECK_WEIGHT;
                 firstRun = true;

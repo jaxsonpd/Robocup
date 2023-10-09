@@ -20,7 +20,7 @@
 
 // ===================================== Types/Constants ==============================
 #define ROTATION_SPEED 25 // Speed during rotation step in %
-#define MOVE_SPEED 40 // Speed during move phase in % 
+#define MOVE_SPEED 50 // Speed during move phase in % 
 #define MOVE_TIME 3000 // Time to move to open area in ms
 
 #define WEIGHT_DIFFERENCE_THRESHOLD 100 // Difference between IR sensors to detect weight
@@ -81,7 +81,7 @@ void findWeights(RobotInfo_t *robotInfo) {
 
     static int16_t startHeading = 0; // Heading at start of rotation
 
-    static int16_t mostOpenHeading = 0; // Heading of the most open area
+    static int16_t mostOpenHeading = robotInfo->IMU_Heading; // Heading of the most open area
     static int16_t mostOpenDistance = 0; // Distance of the most open area
     static int16_t mostOpenHeadingPrevInv = 180; // Previous heading of the most open area
 

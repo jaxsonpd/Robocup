@@ -88,6 +88,7 @@ bool colorSensor_init() {
  */
 uint8_t colorSensor_read() {
     uint16_t r, g, b, c;
+    static uint8_t prevousColor = ARENA;
     static elapsedMillis readingTimer = 0;
     static bool ledOn = false;
 
@@ -104,13 +105,16 @@ uint8_t colorSensor_read() {
         
         // Check what base the robot is over
         if (abs(r-R_GREEN_BASE) < R_THRESHOLD && abs(g-G_GREEN_BASE) < G_THRESHOLD && abs(b-B_GREEN_BASE) < B_THRESHOLD) {
+            prevousColor = GREEN;
             return GREEN;
         } else if (abs(r-R_BLUE_BASE) < R_THRESHOLD && abs(g-G_BLUE_BASE) < G_THRESHOLD && abs(b-B_BLUE_BASE) < B_THRESHOLD) {
+            prevousColor = BLUE;
             return BLUE;
         } else {
+            prevousColor = ARENA;
             return ARENA;
         }
     }
 
-    return READING;
+    return prevousColor;
 }
