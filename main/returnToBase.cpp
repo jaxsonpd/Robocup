@@ -20,7 +20,7 @@
 
 // ===================================== Types/Constants ==============================
 #define STATE_OFFSET 10 // Offset for state reporting
-#define TURN_DISTANCE 100 // The distance ta wall has to be to trigger a turn
+#define TURN_DISTANCE 300 // The distance ta wall has to be to trigger a turn
 #define US_WALL_DISTANCE 100 // Maxiumum wall distance for ROATE state to not move into HEAD_HOME
 
 #define ROTATE_SPEED 30 // The degrees offset used to rotate the robot
@@ -92,7 +92,7 @@ void returnToBase(RobotInfo_t* robotInfo) {
                 }
               }
             } else {
-              motors_followHeading(robotInfo, baseHeading, 0);
+              motors_followHeading(robotInfo, baseHeading, 20);
             }
             break;
         
@@ -102,24 +102,12 @@ void returnToBase(RobotInfo_t* robotInfo) {
                 targetHeading = baseHeading; //robotInfo->IMU_Heading; // Set the target heading to the current heading
             }
 
-            // Check if the robot is parallel to the wall and correct if it is not
-            // if (wallSide == LEFT & robotInfo->USLeft_Distance > previousUSDistance + US_TOLERANCE) { // Drifting away
-            //     targetHeading -= 1;
-            // } else if (wallSide == LEFT & robotInfo->USLeft_Distance < previousUSDistance - US_TOLERANCE) { // Drifting towards
-            //     targetHeading += 1;
-            // } else if (wallSide == RIGHT & robotInfo->USRight_Distance > previousUSDistance + US_TOLERANCE) { // Drifting away
-            //     targetHeading += 1;
-            // } else if (wallSide == RIGHT & robotInfo->USRight_Distance < previousUSDistance - US_TOLERANCE) { // Drifting towards
-            //     targetHeading -= 1;
-            // }
-           
             if (robotInfo->USLeft_Distance < WALL_ADJ_DIST) { // Check if the robot is close to a wall
                 wallSide = LEFT;
             } else if (robotInfo->USRight_Distance < WALL_ADJ_DIST) { // Check if the robot is close to a wall
                     wallSide = RIGHT;
             }
           
-
             // ** State machine update **
             // Check if there is a wall in front of the robot
             if (abs(robotInfo->IMU_Heading - targetHeading) < 8) {
@@ -142,19 +130,19 @@ void returnToBase(RobotInfo_t* robotInfo) {
                 }
                 } else {
                   wallDetections = 0;
+                  /* When Wall Disappears head home */
+                  if (wallSide == LEFT && (robotInfo->USLeft_Distance > WALL_ADJ_DIST*2)) {
+                    state = HEAD_HOME;  
+                  } else if (wallSide == RIGHT && (robotInfo->USRight_Distance > WALL_ADJ_DIST*2)) {
+                    state = HEAD_HOME;  
+                  }
                 }
             } else {
-                motors_followHeading(robotInfo, targetHeading, 20);  
-                /* When Wall Disappears head home */
-                // if (wallSide == LEFT && (robotInfo->USLeft_Distance > WALL_ADJ_DIST*2)) {
-                //   state = HEAD_HOME;  
-                // } else if (wallSide == RIGHT && (robotInfo->USRight_Distance > WALL_ADJ_DIST*2)) {
-                //   state = HEAD_HOME;  
-                // }
+                motors_followHeading(robotInfo, targetHeading, 30);  
             } 
             //bound heading
       
-            motors_followHeading(robotInfo, targetHeading, 20);
+            motors_followHeading(robotInfo, targetHeading, 30);
             break;
 
     }
@@ -173,9 +161,9 @@ void returnToBase_init(RobotInfo_t* robotInfo) {
     firstRun = true;
     sensors_updateInfo(robotInfo);
     if (robotInfo->USRight_Distance < 100) {
-      baseHeading = 135;
+      baseHeading = 180;
     } else if (robotInfo->USLeft_Distance < 100) {
-      baseHeading = -135;
+      baseHeading = 180;
     } else {
       baseHeading = 180;
     }
