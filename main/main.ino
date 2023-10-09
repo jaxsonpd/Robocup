@@ -26,9 +26,9 @@
 #define SERIAL_BAUD_RATE 115200
 
 // Scheduler constants
-#define SENSOR_UPDATE_TIME 20
-#define ROBOT_INFO_UPDATE_TIME 50
-#define FSM_UPDATE_TIME 100
+#define SENSOR_UPDATE_TIME 25
+#define ROBOT_INFO_UPDATE_TIME 75
+#define FSM_UPDATE_TIME 75
 #define SLOW_UPDATE_TIME 500
 
 // Watchdog constants
@@ -76,10 +76,14 @@ void robot_setup() {
 
     }
 
+    delay(100);
+
     Serial.println("Initialising sensors");
-    if (sensors_init()) {
+    if (sensors_init(&robotInfo)) {
         Serial.println("Error setting up sensors");
     }
+    
+    delay(100);
 
     if (collector_setup()) {
       Serial.println("Error setting up collection mechanisim");
@@ -109,6 +113,7 @@ uint8_t watchDog(RobotInfo_t* robotInfo, bool reset) {
 
     if (reset) {
         watchDogTimer = 0;
+        return 0;
     }
 
     // Check if the robot is trying to go forward but is not moving
@@ -168,8 +173,8 @@ void FSM(RobotInfo_t* robotInfo) {
             }
 
             if (robotInfo->weightsOnBoard >= 3) {
-                state = RETURN_HOME;
-                firstRun = true;
+                //state = RETURN_HOME;
+                //firstRun = true;
             } else {
                 findWeights(robotInfo);
             }
@@ -195,9 +200,11 @@ void FSM(RobotInfo_t* robotInfo) {
             if (stateTimer > REVERSE_TIME) {
                 state = prevousStateWatchDog;
                 firstRun = true;
-
                 motors_setLeft(0);
                 motors_setRight(0);
+
+                weightCollection_deInit(robotInfo);
+                
                 watchDog(robotInfo, true);
             } else {
                 motors_setLeft(REVERSE_SPEED);
@@ -245,7 +252,7 @@ void loop() {
         if (FSMTimer > FSM_UPDATE_TIME) {
             // findWeights(&robotInfo);
             // motors_formShape(&robotInfo, 5000, 90);
-            // motors_followHeading(&robotInfo, 0, 35);
+            // motors_followHeading(&robotInfo, 180, 35);
             // crane_move_weight();
             // returnToBase(&robotInfo);
             FSM(&robotInfo);

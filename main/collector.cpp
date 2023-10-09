@@ -15,35 +15,38 @@
 
 // ===================================== Defines/Constants =====================================
 // Crane constants
-#define CRANE_SERVO_PIN 29
-#define ELECTROMAGNET_PIN 20
+#define CRANE_SERVO_PIN 30
+#define ELECTROMAGNET_PIN 14
 
-#define RELEASE_ANGLE 140
-#define COLLECT_ANGLE 15
+#define RELEASE_ANGLE 135
+#define COLLECT_ANGLE 5
 #define STANDBY_ANGLE 100
 
 // Claw constants
-#define LEFT_CLAW_SERVO_PIN 30
-#define RIGHT_CLAW_SERVO_PIN 31
+#define LEFT_CLAW_SERVO_PIN 31
+#define RIGHT_CLAW_SERVO_PIN 32
 
-#define LEFT_OPEN_ANGLE 50
-#define LEFT_CLOSED_ANGLE 3
-#define RIGHT_OPEN_ANGLE 135
-#define RIGHT_CLOSED_ANGLE 180
+#define LEFT_OPEN_ANGLE 75
+#define LEFT_CLOSED_ANGLE 163
+#define RIGHT_OPEN_ANGLE 110
+#define RIGHT_CLOSED_ANGLE 20
 
 #define CLAW_TEST_PIN 24
 
 // FSM constants
-#define REVERSE_TIME 1000 // Time to reverse when positioning the weight
-#define REVERSE_SPEED 20 // Speed to reverse at
+#define CHECK_WEIGHT_TIME 1000
 
-#define FORWARD_TIME 1000 // Time to move forward when positioning the weight
-#define FORWARD_SPEED 20 // Speed to move forward at
+#define REVERSE_TIME 700 // Time to reverse when positioning the weight
+#define REVERSE_SPEED -35 // Speed to reverse at
+
+#define FORWARD_TIME 700 // Time to move forward when positioning the weight
+#define FORWARD_SPEED 35 // Speed to move forward at
 
 #define COLLECT_TIME 3000 // Time to collect the weight before dropping it
 #define WEIGHT_IN_CLAW_DISTANCE 100 // Distance to weight to trigger weight collection (wether or not the weight has been caught)
 
-
+#define BACK_OFF_TIME 500 // Time to back off when a weight is not detected
+#define BACK_OFF_ROTATE_TIME 500 // Time to rotate when a weight is not detected
 
 enum CranePositions {
   COLLECT = 0,
@@ -53,12 +56,16 @@ enum CranePositions {
 
 enum FSMStates {
     CHECK_WEIGHT = 0,
+    WAIT,
+    BACK_OFF_WEIGHT,
     POSITION_WEIGHT,
     COLLECT_WEIGHT
-}
+};
 // ===================================== Globals ======================================
 
-Servo craneServo, leftClawServo, rightClawServo;
+Servo craneServo;
+Servo leftClawServo;
+Servo rightClawServo;
 
 // ===================================== Function Definitions =========================
 /**
@@ -92,15 +99,7 @@ void electromagnet(bool on) {
   }
 }
 
-bool crane_setup() {   
-    craneServo.attach(CRANE_SERVO_PIN); 
-    pinMode(ELECTROMAGNET_PIN, OUTPUT);
 
-    electromagnet(false);
-    crane_move(STANDBY);
-
-    return 0;
-}
 
 
 /**
@@ -121,8 +120,8 @@ bool claw_setup() {
  *
 */
 void close_claws() { 
-    leftClaw.write(LEFT_CLOSED_ANGLE);
-    rightClaw.write(RIGHT_CLOSED_ANGLE);
+    leftClawServo.write(LEFT_CLOSED_ANGLE);
+    rightClawServo.write(RIGHT_CLOSED_ANGLE);
 } 
 
 
@@ -131,8 +130,18 @@ void close_claws() {
  *
 */
 void open_claws() { 
-    leftClaw.write(LEFT_OPEN_ANGLE);
-    rightClaw.write(RIGHT_OPEN_ANGLE);
+    leftClawServo.write(LEFT_OPEN_ANGLE);
+    rightClawServo.write(RIGHT_OPEN_ANGLE);
+}
+
+bool crane_setup() {   
+    craneServo.attach(CRANE_SERVO_PIN); 
+    pinMode(ELECTROMAGNET_PIN, OUTPUT);
+
+    electromagnet(false);
+    crane_move(STANDBY);
+
+    return 0;
 }
 
 
@@ -166,16 +175,16 @@ bool collector_setup() {
     return 0;
 }
 
+static uint8_t collectionState = CHECK_WEIGHT;
 
 /**
  * @brief Collect the weights using a FSM
  * @param robotInfo the robot information struct
  * 
- * @return true if the robot is finished (Regardless of wether weight was collected or not)
+ * @return 1 if the robot is finished and weight collected and 2 if weight wasn't collected
 */
-bool weightCollect(RobotInfo_t* robotInfo) {
-    static uint8_t collectionState = CHECK_WEIGHT;
-    static ellapsedMillis stateTimer = 0;
+uint8_t weightCollect(RobotInfo_t* robotInfo) {
+    static elapsedMillis stateTimer = 0;
     static bool firstRun = true;
 
     // State machine
@@ -187,29 +196,63 @@ bool weightCollect(RobotInfo_t* robotInfo) {
                 close_claws();
             }
 
-            if (stateTimer > 1000) { // Check the weight to see if it is there and conductive
+            if (stateTimer > CHECK_WEIGHT_TIME) { // Check the weight to see if it is there and conductive
                 if (robotInfo->IRBottom_Distance < WEIGHT_IN_CLAW_DISTANCE) {
                     if (claw_test()) {
                         collectionState = POSITION_WEIGHT;
                         firstRun = true;
                     } else {
                         open_claws();
-                        return true;
+                        firstRun = true;
+                        collectionState = BACK_OFF_WEIGHT;
                     }
                     
                 } else {
                     open_claws();
-                    return true;
+                    firstRun = true;
+                    collectionState = WAIT;
                 }
             }
 
             break;
 
+        case WAIT:
+            if (firstRun) {
+                firstRun = false;
+                stateTimer = 0;
+            }
+
+            if (stateTimer > 500) {
+                collectionState = CHECK_WEIGHT;
+                firstRun = true;
+                return 1;
+            }
+
+            break;
+
+        case BACK_OFF_WEIGHT: // Move away from a weight that is not real
+            if (firstRun) {
+                firstRun = false;
+                stateTimer = 0;
+            }
+
+            if (stateTimer < BACK_OFF_TIME) {
+                motors_setLeft(-30);
+                motors_setRight(-30);
+            } else if (stateTimer < (BACK_OFF_TIME + BACK_OFF_ROTATE_TIME)) {
+                motors_setLeft(30);
+                motors_setRight(-30);
+            } else {
+                collectionState = CHECK_WEIGHT;
+                firstRun = true;
+                return 2;
+            }
+
+
         case POSITION_WEIGHT:
             if (firstRun) {
                 firstRun = false;
                 stateTimer = 0;
-                crane_move(COLLECT);
                 electromagnet(true);
             }
 
@@ -219,11 +262,15 @@ bool weightCollect(RobotInfo_t* robotInfo) {
             } else if (stateTimer < (REVERSE_TIME + FORWARD_TIME)) {
                 motors_setLeft(FORWARD_SPEED);
                 motors_setRight(FORWARD_SPEED);
-            } else {
+            } else if (stateTimer < (REVERSE_TIME + FORWARD_TIME + 1000)) {
+                crane_move(COLLECT);
+
                 motors_setLeft(0);
                 motors_setRight(0);
+                
+            } else {
                 collectionState = COLLECT_WEIGHT;
-                firstRun = true;
+                firstRun = 1;
             }
 
             break;
@@ -240,7 +287,7 @@ bool weightCollect(RobotInfo_t* robotInfo) {
                 open_claws();
 
                 collectionState = CHECK_WEIGHT;
-                firstRun = true;
+                firstRun = 1;
 
                 crane_move(STANDBY);
 
@@ -253,7 +300,15 @@ bool weightCollect(RobotInfo_t* robotInfo) {
 
             break;
     }
+
+    robotInfo->mode = 20 + collectionState;
+    return 0;
 }
 
-
+void collector_deInit() {
+    collectionState = CHECK_WEIGHT;
+    crane_move(STANDBY);
+    electromagnet(false);
+    open_claws();
+}
 

@@ -42,6 +42,8 @@ typedef struct {
     bool atHeading; // Whether the robot is at the target heading for more then 100ms
     uint8_t mode; // Current mode the robot is in
     uint8_t weightsOnBoard; // Number of weights on board
+    uint8_t colorOver; // The color the robot is currently over
+    uint8_t homeBase; // Which home base the robot has started at
 
 } RobotInfo_t;
 

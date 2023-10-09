@@ -11,6 +11,7 @@
 #include <stdbool.h>
 
 #include <Adafruit_TCS34725.h>
+#include "colorSensor.hpp"
 #include <Arduino.h>
 #include <Wire.h>
 
@@ -20,27 +21,45 @@
 #define B_THRESHOLD 100
 #define READ_TIME 50
 
+// Green base color
+#define R_GREEN_BASE 0
+#define G_GREEN_BASE 0
+#define B_GREEN_BASE 0
+
+// Blue base color
+#define R_BLUE_BASE 0
+#define G_BLUE_BASE 0
+#define B_BLUE_BASE 0
+
 #define TCS34725_ADDRESS (0x29)     /**< I2C address **/
 
 // ===================================== Globals ======================================
 Adafruit_TCS34725 tcs = Adafruit_TCS34725(TCS34725_INTEGRATIONTIME_50MS, TCS34725_GAIN_4X);
 
-uint16_t r_base = 0;
-uint16_t g_base = 0;
-uint16_t b_base = 0;
+
 
 // ===================================== Function Definitions =========================
 /**
  * @brief Set the base color
  * 
+ * @return what base the robot is over
  */
-void colorSensor_setBase() {
-    uint16_t c;
+uint8_t colorSensor_getBase() {
+    uint16_t r, g, b, c;
     tcs.setInterrupt(false);      // turn on LED
     delay(60);  // takes 50ms to read
-    tcs.getRawData(&r_base, &g_base, &b_base, &c);
+    tcs.getRawData(&r, &g, &b, &c);
     tcs.setInterrupt(true);  // turn off LED
-    Serial.println("Base Color " + String(r_base) + " " + String(g_base) + " " + String(b_base) + " " + String(c));
+    Serial.println("Color " + String(r) + " " + String(g) + " " + String(b) + " " + String(c));
+
+    // Check what base the robot is over
+    if (abs(r-R_GREEN_BASE) < R_THRESHOLD && abs(g-G_GREEN_BASE) < G_THRESHOLD && abs(b-B_GREEN_BASE) < B_THRESHOLD) {
+        return GREEN;
+    } else if (abs(r-R_BLUE_BASE) < R_THRESHOLD && abs(g-G_BLUE_BASE) < G_THRESHOLD && abs(b-B_BLUE_BASE) < B_THRESHOLD) {
+        return BLUE;
+    } else {
+        return ARENA;
+    }
 }
 
 
@@ -52,24 +71,22 @@ void colorSensor_setBase() {
  */
 bool colorSensor_init() {
     // I2C Init
-    Wire1.begin(TCS34725_ADDRESS, &Wire1);
+    Wire1.begin();
     Wire1.setClock(400000); // use 400 kHz I2C
 
-    if (tcs.begin()) {
+    if (tcs.begin(TCS34725_ADDRESS, &Wire1)) {
         return true;
     } else {
         return false;
     }
-
-    colorSensor_setBase();
 }
 
 /** 
  * @brief Work out if robot is over the base
  * 
- * @return true if over base
+ * @return what color the robot is over 
  */
-bool colorSensor_overBase() {
+uint8_t colorSensor_read() {
     uint16_t r, g, b, c;
     static elapsedMillis readingTimer = 0;
     static bool ledOn = false;
@@ -81,13 +98,19 @@ bool colorSensor_overBase() {
     } else if (readingTimer > READ_TIME) { // Wait for 50ms
         tcs.getRawData(&r, &g, &b, &c);
         tcs.setInterrupt(true);  // turn off LED
-        
+        Serial.println("Color " + String(r) + " " + String(g) + " " + String(b) + " " + String(c));
+
         ledOn = false;
         
-        if (abs(r - r_base) < R_THRESHOLD && abs(g - g_base) < G_THRESHOLD && abs(b - b_base) < B_THRESHOLD) {
-            return true;
-        } 
+        // Check what base the robot is over
+        if (abs(r-R_GREEN_BASE) < R_THRESHOLD && abs(g-G_GREEN_BASE) < G_THRESHOLD && abs(b-B_GREEN_BASE) < B_THRESHOLD) {
+            return GREEN;
+        } else if (abs(r-R_BLUE_BASE) < R_THRESHOLD && abs(g-G_BLUE_BASE) < G_THRESHOLD && abs(b-B_BLUE_BASE) < B_THRESHOLD) {
+            return BLUE;
+        } else {
+            return ARENA;
+        }
     }
 
-    return false;
+    return READING;
 }

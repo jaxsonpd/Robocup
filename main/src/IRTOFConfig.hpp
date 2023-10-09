@@ -24,7 +24,7 @@
 #define IRTOF_1 // Bottom IR TOF sensor
 #define IRTOF_1_ADDR 0x31
 #define IRTOF_1_TYPE 0 // 1.2m standard
-#define IRTOF_1_XSHUT_PIN 1
+#define IRTOF_1_XSHUT_PIN 5
 
 // ===================================== Function Prototypes ==========================
 

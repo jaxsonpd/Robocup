@@ -16,11 +16,16 @@
 
 
 // ===================================== Types/Constants ==============================
-
+enum colors {
+    BLUE,
+    GREEN,
+    ARENA,
+    READING
+};
 
 // ===================================== Function Prototypes ==========================
 bool colorSensor_init();
-bool colorSensor_overBase();
-void colorSensor_setBase();
+uint8_t colorSensor_read();
+uint8_t colorSensor_getBase();
 
 #endif // COLOR_SENSOR_H

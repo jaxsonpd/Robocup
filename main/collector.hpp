@@ -10,10 +10,11 @@
 #define COLLECTOR_H
 
 #include <Arduino.h>
-#include "collector.hpp"
+#include "robotInformation.hpp"
 
 bool collector_setup();
-bool weightCollect(RobotInfo_t* robotInfo);
+uint8_t weightCollect(RobotInfo_t* robotInfo);
+void collector_deInit();
 
 
 

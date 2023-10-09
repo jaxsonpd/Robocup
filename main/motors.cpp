@@ -90,10 +90,12 @@ static int16_t calcControlValue(int16_t setpoint, int16_t heading) {
     
     // Calculate the error and bound it
     int32_t error = setpoint - heading;
-    if (error >= MAX_HEADING) {
-      error -= HEADING_OFFSET;
+    if (error > MAX_HEADING) {
+        error -= HEADING_OFFSET;
+        intergralError = 0;
     } else if (error < MIN_HEADING) {
-      error += HEADING_OFFSET;
+        error += HEADING_OFFSET;
+        intergralError = 0;
     }
 
     // Calculate the integral of the error

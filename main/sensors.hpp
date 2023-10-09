@@ -20,7 +20,7 @@
 // ===================================== Types/Constants ==============================
 
 // ===================================== Function Prototypes ==========================
-bool sensors_init(void);
+bool sensors_init(RobotInfo_t* robotInfo);
 void sensors_updateInfo(RobotInfo_t* robotInfo);
 void sensors_update(void);
 void sensor_deInit(void);

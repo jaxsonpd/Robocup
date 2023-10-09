@@ -20,6 +20,7 @@
 #include "src/circBuffer.hpp"
 #include "src/IRTOF0.hpp"
 #include "src/IRTOF1.hpp"
+#include "src/colorSensor.hpp"
 
 #include "src/USConfig.hpp"
 #include "src/IRTOFConfig.hpp"
@@ -32,10 +33,12 @@
 #define HEADING_OFFSET 360
 #define MAX_HEADING 180
 #define HEADING_BOUND 2
+#define MIN_HEADING -179
 
 // Buffer sizes for sensor readings
 #define BUFFER_SIZE 8
 #define IRTOF_BUFFER_SIZE 3
+#define IMU_BUFFER_SIZE 5
 
 #define SX1509_ADDRESS 0x3F // TOF IO expander address
 
@@ -55,7 +58,7 @@ uint16_t* usDistances = new uint16_t[US_NUM]; // Array of computed distances
 // Circular buffers for sensors
 circBuffer_t* us0Buffer = new circBuffer_t[BUFFER_SIZE]; // Left US
 circBuffer_t* us1Buffer = new circBuffer_t[BUFFER_SIZE]; // Right US
-circBuffer_t* headingBuffer = new circBuffer_t[BUFFER_SIZE];
+circBuffer_t* headingBuffer = new circBuffer_t[IMU_BUFFER_SIZE];
 circBuffer_t* forwardAccelerationBuffer = new circBuffer_t[BUFFER_SIZE];
 circBuffer_t* rotationAccelerationBuffer = new circBuffer_t[BUFFER_SIZE];
 
@@ -116,15 +119,14 @@ static void init_USTOF(void) {
  * 
  * @return success (0) or failure (1)
  */
-bool sensors_init(void) {
+bool sensors_init(RobotInfo_t* robotInfo) {
     // I2C Init
     Wire.begin();
     Wire.setClock(400000); // use 400 kHz I2C
+    delay(100);
 
     // Initialise the IO expander
-
     io.begin(SX1509_ADDRESS);
-
 
     // Initialise the IMU
     if(!bno.begin()) {
@@ -137,6 +139,13 @@ bool sensors_init(void) {
     // Initailise the IR TOF sensors
     init_IRTOF();
 
+    // Set the base
+    // if (colorSensor_init()) {
+    //     Serial.println("Color sensor init failed");
+    //     return 1;
+    // }
+
+    // robotInfo->homeBase = colorSensor_getBase();
 
     // Initialise the buffers
     circBuffer_init(us0Buffer, BUFFER_SIZE);
@@ -178,12 +187,20 @@ static int16_t getHeading(void) {
     } else {
         prevHeading = heading;
     }
-
     // Bound to 180 to -180
     if (heading > MAX_HEADING) {
         heading -= HEADING_OFFSET;
+
+    } else if (heading < MIN_HEADING) {
+        heading += HEADING_OFFSET;
+        
     }
 
+    if (heading > MAX_HEADING - 3 || heading < MIN_HEADING + 3) {
+        for (size_t i; i < IMU_BUFFER_SIZE; i++) { // Wipe the buffer
+            circBuffer_write(headingBuffer, heading);
+        }
+    }
     return heading;
 }
 
@@ -223,6 +240,7 @@ void sensors_updateInfo(RobotInfo_t* robotInfo) {
     robotInfo->rotationAcceleration = getRotationAcceleration();
     robotInfo->IRTop_Distance = irTOF0.getDistance();
     robotInfo->IRBottom_Distance = irTOF1.getDistance();
+    // robotInfo->colorOver = colorSensor_read();
 }
 
 /**

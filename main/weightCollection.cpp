@@ -19,18 +19,21 @@
 
 
 // ===================================== Types/Constants ==============================
-#define ROTATION_SPEED 30 // Speed during rotation step in %
-#define MOVE_SPEED 50 // Speed during move phase in % 
-#define MOVE_TIME 4000 // Time to move to open area in ms
+#define ROTATION_SPEED 25 // Speed during rotation step in %
+#define MOVE_SPEED 40 // Speed during move phase in % 
+#define MOVE_TIME 3000 // Time to move to open area in ms
 
 #define WEIGHT_DIFFERENCE_THRESHOLD 100 // Difference between IR sensors to detect weight
+#define BOTTOM_SENSOR_OFFSET 40 // Offset for the bottom sensor to account for the difference in mounting postion
+
 #define WEIGHT_CLOSE_DISTANCE 100 // Distance to weight to trigger weight collection
 #define OBSTICAL_CLOSE_DISTANCE 400 // Distance to obstical to trigger rotation
+
 #define MAX_DETECTION_RANGE 950 // Maximum range that weights can be detected at
 
 #define HEADING_THRESHOLD 9 // Threshold for heading to be considered the same
 
-#define NUM_DETECTIONS 1 // Number of times the weight must be detected before it is collected
+#define NUM_DETECTIONS 3 // Number of times the weight must be detected before it is collected
 
 // ===================================== Globals ======================================
 enum states {
@@ -40,7 +43,7 @@ enum states {
     AT_WEIGHT
 };
 
-static uint8_t state = ROTATING;
+static uint8_t state = MOVE_TO_OPEN;
 
 // ===================================== Function Definitions =========================
 /** 
@@ -51,8 +54,8 @@ static uint8_t state = ROTATING;
  * @return true if a weight has been detected
  */
 static bool weightDetected(uint32_t topDistance, uint32_t bottomDistance) {
-    if (topDistance > bottomDistance) { // Sensors are correct 
-        if ((topDistance - bottomDistance) > WEIGHT_DIFFERENCE_THRESHOLD) { // Weight detected
+    if (topDistance > (bottomDistance + BOTTOM_SENSOR_OFFSET)) { // Sensors are correct 
+        if ((topDistance - (bottomDistance + BOTTOM_SENSOR_OFFSET)) > WEIGHT_DIFFERENCE_THRESHOLD) { // Weight detected
             if (bottomDistance < MAX_DETECTION_RANGE) { // Within detection range
                 return true;
             }
@@ -92,6 +95,8 @@ void findWeights(RobotInfo_t *robotInfo) {
                 mostOpenDistance = 0;
             }
 
+            robotInfo->mode = state;
+
             // Check for weight
             weightDetectionOccurances = weightDetected(robotInfo->IRTop_Distance, robotInfo->IRBottom_Distance) 
                 	                    ? weightDetectionOccurances + 1 : 0;
@@ -108,6 +113,9 @@ void findWeights(RobotInfo_t *robotInfo) {
 
             // Update the state machine
             if (weightDetectionOccurances >= NUM_DETECTIONS) { // Check to see if we should pick up the weight
+                motors_setLeft(0);
+                motors_setRight(0);
+
                 // Weight has been detected enough times so collect it
                 state = MOVE_TO_WEIGHT; // Move to the weight
                 firstRun = true;
@@ -119,9 +127,6 @@ void findWeights(RobotInfo_t *robotInfo) {
 
                 Serial.print("Detected at: ");
                 Serial.println(weightHeading);
-
-                motors_setLeft(0);
-                motors_setRight(0);
 
             } else if (abs(robotInfo->IMU_Heading - startHeading) < HEADING_THRESHOLD) {  // Check if we have rotated 360
                 // We have rotated 360
@@ -146,6 +151,8 @@ void findWeights(RobotInfo_t *robotInfo) {
                 firstRun = false;
             }
 
+            robotInfo->mode = state;
+
             // Update the state machine
             if (moveTimer > MOVE_TIME) { // Check if we have moved for long enough
                 state = ROTATING; // Rotate on the spot
@@ -166,12 +173,13 @@ void findWeights(RobotInfo_t *robotInfo) {
                 firstRun = false;
             }
 
+            robotInfo->mode = state;
 
             // Update the state machine
             if (robotInfo->IRBottom_Distance < WEIGHT_CLOSE_DISTANCE) { // Check if we are close to the weight
                 state = AT_WEIGHT; // We are at the weight
                 firstRun = true;
-            } else if (moveTimer > (weightDistance*2)) {
+            } else if (moveTimer > (weightDistance*4)) {
                 state = AT_WEIGHT; // We are at the weight
                 firstRun = true;
             } else { // Move to the weight
@@ -184,24 +192,27 @@ void findWeights(RobotInfo_t *robotInfo) {
             if (firstRun) { // Setup the state
                 moveTimer = 0;
                 firstRun = false;
-            }
-
-            // Check if weight has been removed 
-            bool moveOnToNext = weightCollect(robotInfo);
-
-            if (moveOnToNext) {
-                state = ROTATING; // Rotate on the spot
-                firstRun = true;
-            } else { // Hold Position
                 motors_setLeft(0);
                 motors_setRight(0);
             }
+
+            robotInfo->mode = state;
+
+            // Check if weight has been removed 
+            uint8_t moveOnToNext = weightCollect(robotInfo);
+
+            if (moveOnToNext) {
+                state = ROTATING; // Rotate on the spot
+                if (moveOnToNext == 2) { // Weight was not real
+                    startHeading = robotInfo->IMU_Heading - 40; // Set the end heading to make a blank spot were the fake weight is
+                    moveTimer = 0; // Reset the move timer
+                    mostOpenDistance = 0;
+                } else {
+                    firstRun = true;
+                }
+            }
             break;
-
-
     }
-
-    robotInfo->mode = state;
 }
 
 
@@ -210,6 +221,9 @@ void findWeights(RobotInfo_t *robotInfo) {
  * 
  */
 void weightCollection_deInit(RobotInfo_t *robotInfo) {
+    if (state == AT_WEIGHT) {
+        collector_deInit();
+    }
     state = ROTATING;
     robotInfo->mode = state;
 }

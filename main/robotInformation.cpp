@@ -54,6 +54,12 @@ void printRobotInfo(RobotInfo_t* robotInfo) {
     Serial.print(robotInfo->forwardAcceleration);
     Serial.print(", Az: ");
     Serial.print(robotInfo->rotationAcceleration);
+    Serial.print("Weights");
+    Serial.print(robotInfo->weightsOnBoard);
+    Serial.print("Base: ");
+    Serial.print(robotInfo->homeBase);
+    Serial.print(", ");
+    Serial.print(robotInfo->colorOver);
     Serial.print("\n");
 
     char Serial1Buffer[150];
