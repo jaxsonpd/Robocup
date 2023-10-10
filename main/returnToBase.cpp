@@ -59,13 +59,7 @@ void returnToBase(RobotInfo_t* robotInfo) {
     static uint16_t previousUSDistance = 10000; // The previous ultrasonic distance
     static uint8_t wallSide = 0; // The side of the wall the robot is following 
     static int8_t wallDetections = 0; 
-    Serial.print(state);
-    Serial.print(" ");
-    Serial.print(robotInfo->IMU_Heading);
-    Serial.print(" ");
-    Serial.print(targetHeading);
-    Serial.print(" ");
-    Serial.println(robotInfo->IRTop_Distance);
+
     // State machine
     switch (state) {
         case HEAD_HOME: // Move towards the home base if there are no walls in the way

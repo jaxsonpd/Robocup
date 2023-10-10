@@ -27,8 +27,8 @@
 
 // Scheduler constants
 #define SENSOR_UPDATE_TIME 15
-#define ROBOT_INFO_UPDATE_TIME 50
-#define FSM_UPDATE_TIME 75
+#define ROBOT_INFO_UPDATE_TIME 40
+#define FSM_UPDATE_TIME 60
 #define SLOW_UPDATE_TIME 500
 
 // Watchdog constants
@@ -77,7 +77,6 @@ void robot_setup() {
     Serial.println("Initialising motors");
     if (motors_setup()) {
         Serial.println("Error setting up motors");
-
     }
 
     delay(100);
@@ -99,7 +98,7 @@ void robot_setup() {
     // Wait for the go button to be pressed
     waitForGo();
     Serial.println("Go button pressed, starting robot");
-    
+
     delay(1000);
     running = true;
 }
@@ -149,18 +148,6 @@ uint8_t watchDog(RobotInfo_t* robotInfo, bool reset) {
         }
     }
 
-    // Check if the robot is trying to reverse but is not moving
-    if (robotInfo->leftMotorSpeed + robotInfo->rightMotorSpeed < REVERSE_SPEED_THRESHOLD) {
-        if (abs(robotInfo->forwardAcceleration) < FOWARD_ACC_THRESHOLD) {
-            if (watchDogTimer > STATIONARY_TIME) {
-                watchDogTimer = 0;
-                return 3;
-            } else {
-                return 0;
-            }
-        }
-    }
-
     watchDogTimer = 0;
     return 0;
 }
@@ -195,9 +182,11 @@ void FSM(RobotInfo_t* robotInfo) {
                 firstRun = false;
             }
 
-            if (/*returnToBase(robotInfo)*/ false) {
+            if (false) {
                 state = FIND_WEIGHTS;
                 firstRun = true;
+            } else {
+                returnToBase(robotInfo);
             }
             break;
 
@@ -210,13 +199,14 @@ void FSM(RobotInfo_t* robotInfo) {
             if (stateTimer > 750) {
                 switch (watchDog_Reason) {
                     case 1:
-                        if (robotInfo->IRTop_Distance > 300) {
-                            state = WATCH_DOG_SPEED_BUMP;
-                            firstRun = true;
-                        } else {
-                            state = WATCH_DOG_WALL;
-                            firstRun = true;
-                        }
+                        state = prevousStateWatchDog;
+                        firstRun = true;
+                        motors_setLeft(0);
+                        motors_setRight(0);
+
+                        weightCollection_deInit(robotInfo);
+                        
+                        watchDog(robotInfo, true);
 
                         break;
                     case 2:
@@ -230,27 +220,27 @@ void FSM(RobotInfo_t* robotInfo) {
             }
             break;
 
-        case WATCH_DOG_SPEED_BUMP:
-            if (firstRun) {
-                firstRun = false;
-                stateTimer = 0;
-            }
+        // case WATCH_DOG_SPEED_BUMP:
+        //     if (firstRun) {
+        //         firstRun = false;
+        //         stateTimer = 0;
+        //     }
 
-            if (stateTimer > 1000) {
-                state = prevousStateWatchDog;
-                firstRun = true;
-                motors_setLeft(0);
-                motors_setRight(0);
+        //     if (stateTimer > 1000) {
+        //         state = prevousStateWatchDog;
+        //         firstRun = true;
+        //         motors_setLeft(0);
+        //         motors_setRight(0);
 
-                weightCollection_deInit(robotInfo);
+        //         weightCollection_deInit(robotInfo);
                 
-                watchDog(robotInfo, true);
-            } else {
-                motors_setLeft(60);
-                motors_setRight(60);
-            }
+        //         watchDog(robotInfo, true);
+        //     } else {
+        //         motors_setLeft(60);
+        //         motors_setRight(60);
+        //     }
 
-            break;
+        //     break;
         case WATCH_DOG_ROTATION:
             if (firstRun) {
                 firstRun = false;
@@ -277,13 +267,35 @@ void FSM(RobotInfo_t* robotInfo) {
             }
 
             break;
+
+        // case WATCH_DOG_WALL:
+        //     if (firstRun) {
+        //         firstRun = false;
+        //         stateTimer = 0;
+        //     }
+
+        //     if (stateTimer > 1000) {
+        //         state = prevousStateWatchDog;
+        //         firstRun = true;
+        //         motors_setLeft(0);
+        //         motors_setRight(0);
+
+        //         weightCollection_deInit(robotInfo);
+                
+        //         watchDog(robotInfo, true);
+        //     } else {
+        //         motors_setLeft(-60);
+        //         motors_setRight(-60);
+        //     }
+
+            break;
     }
 
     // Check the robots watch dog
     if (state != WATCH_DOG & WATCH_DOG_ENABLED & (robotInfo->mode < 20)) {
       watchDog_Reason = watchDog(robotInfo, false);
         if (watchDog_Reason) {
-          Serial.print("Watchdog Enabled");
+            Serial.print("Watchdog Enabled");
             prevousStateWatchDog = state;
             state = WATCH_DOG;
             firstRun = true;
@@ -333,7 +345,8 @@ void loop() {
             running = checkStopped();
             slowUpdateTimer = 0;
         }
-	  }
+	}
+
 
     sensor_deInit();
     weightCollection_deInit(&robotInfo);

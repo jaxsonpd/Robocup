@@ -240,6 +240,7 @@ static double getRotationAcceleration(void) {
  * 
  */
 void sensors_updateInfo(RobotInfo_t* robotInfo) {
+    static uint8_t counter = 0;
     robotInfo->IMU_Heading = circBuffer_average(headingBuffer);
     robotInfo->USLeft_Distance = circBuffer_average(us0Buffer);
     robotInfo->USRight_Distance= circBuffer_average(us1Buffer);
@@ -248,6 +249,28 @@ void sensors_updateInfo(RobotInfo_t* robotInfo) {
     robotInfo->IRTop_Distance = irTOF0.getDistance();
     robotInfo->IRBottom_Distance = irTOF1.getDistance();
     robotInfo->colorOver = colorSensor_read();
+
+    if (robotInfo->IRBottom_Distance == robotInfo->IRTop_Distance) {
+        counter ++;
+    } else {
+        counter = 0;
+    }
+
+    if (counter > 20) {
+        // Initailise the IR TOF sensors
+        irTOF0.deInit();    
+        io.digitalWrite(IRTOF_0_XSHUT_PIN, LOW);  
+        
+        irTOF1.deInit();
+        io.digitalWrite(IRTOF_1_XSHUT_PIN, LOW); 
+
+        counter = 0;
+        delay(100);
+
+        init_IRTOF();
+    }
+
+    
 }
 
 /**

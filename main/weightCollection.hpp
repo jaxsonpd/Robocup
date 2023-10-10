@@ -23,5 +23,6 @@
 // ===================================== Function Prototypes ==========================
 void findWeights(RobotInfo_t *robotInfo);
 void weightCollection_deInit(RobotInfo_t *robotInfo);
+void setMostOpen(RobotInfo_t* robotInfo);
 
 #endif // WEIGHTCOLLECTION_H

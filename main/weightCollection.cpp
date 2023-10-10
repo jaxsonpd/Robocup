@@ -33,17 +33,20 @@
 
 #define HEADING_THRESHOLD 9 // Threshold for heading to be considered the same
 
-#define NUM_DETECTIONS 3 // Number of times the weight must be detected before it is collected
+#define NUM_DETECTIONS 2 // Number of times the weight must be detected before it is collected
 
 // ===================================== Globals ======================================
 enum states {
     ROTATING,
     MOVE_TO_OPEN,
     MOVE_TO_WEIGHT,
-    AT_WEIGHT
+    AT_WEIGHT,
+    GET_OUT
 };
 
-static uint8_t state = MOVE_TO_OPEN;
+static uint8_t state = GET_OUT;
+
+int16_t mostOpenHeading = 0; // Heading of the most open area
 
 // ===================================== Function Definitions =========================
 /** 
@@ -65,6 +68,10 @@ static bool weightDetected(uint32_t topDistance, uint32_t bottomDistance) {
     return false;
 }
 
+void setMostOpen(RobotInfo_t* robotInfo) {
+    mostOpenHeading = robotInfo->IMU_Heading;
+}
+
 
 /**
  * @brief Find weights and collect them
@@ -75,13 +82,13 @@ void findWeights(RobotInfo_t *robotInfo) {
     static bool firstRun = true; // True if first run in state
     static elapsedMillis moveTimer = 0; // Timer for moving to open area
     static uint8_t weightDetectionOccurances = 0; // Counter for weight detection 
+    static bool Actually_first_time = true;
 
     static int16_t weightHeading = 0; // Heading of the weight
     static uint16_t weightDistance = UINT16_MAX; // Distance of the weight
 
     static int16_t startHeading = 0; // Heading at start of rotation
 
-    static int16_t mostOpenHeading = robotInfo->IMU_Heading; // Heading of the most open area
     static int16_t mostOpenDistance = 0; // Distance of the most open area
     static int16_t mostOpenHeadingPrevInv = 180; // Previous heading of the most open area
 
@@ -90,7 +97,7 @@ void findWeights(RobotInfo_t *robotInfo) {
         case ROTATING: // Rotate on the spot and look for a weight
             if (firstRun) { // Setup the state
                 firstRun = false;
-                startHeading = robotInfo->IMU_Heading - 10; // Set the start heading to 2 degrees less than the current heading
+                startHeading = robotInfo->IMU_Heading - 15; // Set the start heading to 2 degrees less than the current heading
                 if (startHeading < -179) {
                     startHeading += 360;
                 }
@@ -107,7 +114,7 @@ void findWeights(RobotInfo_t *robotInfo) {
 
             // Update the most open area heading
             if (robotInfo->IRTop_Distance > mostOpenDistance) {
-                if (abs(robotInfo->IMU_Heading - mostOpenHeadingPrevInv) > 10) { // Robot is not going back were it came from
+                if (abs(robotInfo->IMU_Heading - mostOpenHeadingPrevInv) > 5) { // Robot is not going back were it came from
                     mostOpenHeading = robotInfo->IMU_Heading;
                     mostOpenDistance = robotInfo->IRTop_Distance;
                 }
@@ -169,6 +176,23 @@ void findWeights(RobotInfo_t *robotInfo) {
             }
 
             break;
+
+        
+        case GET_OUT: // Get out of the home base
+            if (firstRun) {
+                firstRun = false;
+                moveTimer = 0;
+            }
+
+            if (moveTimer > 1000) {
+                state = ROTATING;
+                firstRun = true;
+            } else {
+                motors_setLeft(80);
+                motors_setRight(80);
+            }
+
+            break;
         
         case MOVE_TO_WEIGHT: // Move to the weight
             if (firstRun) { // Setup the state
@@ -186,7 +210,7 @@ void findWeights(RobotInfo_t *robotInfo) {
                 state = AT_WEIGHT; // We are at the weight
                 firstRun = true;
             } else { // Move to the weight
-                motors_followHeading(robotInfo, weightHeading, 30);
+                motors_followHeading(robotInfo, weightHeading, 40);
             }
             
             break;
@@ -230,6 +254,6 @@ void weightCollection_deInit(RobotInfo_t *robotInfo) {
     if (state == AT_WEIGHT) {
         collector_deInit();
     }
-    state = ROTATING;
+    state = GET_OUT;
     robotInfo->mode = state;
 }

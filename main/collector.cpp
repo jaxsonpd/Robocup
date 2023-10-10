@@ -18,9 +18,9 @@
 #define CRANE_SERVO_PIN 30
 #define ELECTROMAGNET_PIN 14
 
-#define RELEASE_ANGLE 135
+#define RELEASE_ANGLE 165
 #define COLLECT_ANGLE 0
-#define STANDBY_ANGLE 100
+#define STANDBY_ANGLE 105
 
 // Claw constants
 #define LEFT_CLAW_SERVO_PIN 31
@@ -28,7 +28,7 @@
 
 #define LEFT_OPEN_ANGLE 75
 #define LEFT_CLOSED_ANGLE 170
-#define RIGHT_OPEN_ANGLE 110
+#define RIGHT_OPEN_ANGLE 113
 #define RIGHT_CLOSED_ANGLE 10
 
 #define CLAW_TEST_PIN 24
@@ -42,7 +42,7 @@
 #define FORWARD_TIME 700 // Time to move forward when positioning the weight
 #define FORWARD_SPEED 45 // Speed to move forward at
 
-#define COLLECT_TIME 3000 // Time to collect the weight before dropping it
+#define COLLECT_TIME 2000 // Time to collect the weight before dropping it
 #define WEIGHT_IN_CLAW_DISTANCE 100 // Distance to weight to trigger weight collection (wether or not the weight has been caught)
 
 #define BACK_OFF_TIME 500 // Time to back off when a weight is not detected
